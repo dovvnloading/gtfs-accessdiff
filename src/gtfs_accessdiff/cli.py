@@ -79,6 +79,7 @@ def main(argv: list[str] | None = None) -> int:
         identity_concerns=len(report.identity_concerns),
         information_losses=report.information_losses,
         status_changes=report.status_changes,
+        comparison_status=report.status,
         fail_on_loss=args.fail_on_loss,
         fail_on_status_change=args.fail_on_status_change,
     )

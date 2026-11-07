@@ -131,6 +131,15 @@ class CliTests(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertIn('"schema_version"', destination.read_text())
 
+    def test_no_known_baseline_is_nonblocking_only_in_report_mode(self):
+        make_zip(self.before, [("A", "Stop", "0", "", "0")])
+        make_zip(self.after, [("A", "Stop", "0", "", "0")])
+        code, output, _ = self.call()
+        self.assertEqual(code, 0)
+        self.assertIn("inconclusive_no_known_baseline", output)
+        self.assertEqual(self.call("--fail-on-loss")[0], 3)
+        self.assertEqual(self.call("--fail-on-status-change")[0], 3)
+
 
 if __name__ == "__main__":
     unittest.main()

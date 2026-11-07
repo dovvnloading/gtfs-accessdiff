@@ -50,5 +50,12 @@ class GateTests(unittest.TestCase):
         self.assertEqual(self.base(comparable_overlap=0.75, min_overlap=0.75,
                                    status_changes=1, fail_on_status_change=True), 4)
 
+    def test_no_known_baseline_requires_review_when_gate_enabled(self):
+        self.assertEqual(self.base(comparison_status="inconclusive_no_known_baseline",
+                                   fail_on_loss=True), 3)
+        self.assertEqual(self.base(comparison_status="inconclusive_no_known_baseline",
+                                   fail_on_status_change=True), 3)
+        self.assertEqual(self.base(comparison_status="inconclusive_no_known_baseline"), 0)
+
 if __name__ == "__main__":
     unittest.main()

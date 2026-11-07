@@ -23,7 +23,7 @@ KNOWN_VALUES = frozenset({"1", "2"})
 VALID_VALUES = frozenset({"", "0", "1", "2"})
 MAX_ID_SAMPLES = 25
 DEFAULT_REPORT_LIMIT = 200
-SCHEMA_VERSION = "0.4.0"
+SCHEMA_VERSION = "0.5.0"
 
 
 class FeedError(ValueError):
@@ -123,6 +123,7 @@ class AuditResult:
     inherited_causes: tuple[InheritedCause, ...] = ()
     identity_distance_meters: float = 500.0
     status_transitions: tuple[StatusTransition, ...] = ()
+    baseline_comparable_known_records: int = 0
 
     def as_dict(self, *, max_findings: int = DEFAULT_REPORT_LIMIT) -> dict[str, Any]:
         if max_findings < 1:
@@ -169,6 +170,7 @@ class AuditResult:
             f"| ID overlap (shared / larger feed) | {self.overlap:.1%} |",
             f"| Comparable coverage (after identity checks) | {self.comparable_overlap:.1%} |",
             f"| Records with known status, baseline | {self.old_known_records} |",
+            f"| Comparable records with known baseline status | {self.baseline_comparable_known_records} |",
             f"| Records with known status, candidate | {self.new_known_records} |",
             f"| **Known information lost** | **{self.information_losses}** |",
             f"| Known status changed | {self.status_changes} |",
@@ -184,6 +186,8 @@ class AuditResult:
             ])
         elif self.identity_concerns:
             lines.extend(["**Partial review required:** suspicious shared IDs were not compared for accessibility regressions.", ""])
+        elif self.status == "inconclusive_no_known_baseline":
+            lines.extend(["**Inconclusive:** none of the safely comparable stop IDs had a known baseline wheelchair-boarding status. Zero detected losses cannot establish meaningful regression coverage.", ""])
 
         lines.extend(["## Effective accessibility-status transitions", "",
                       "Counts are for comparable shared stop IDs only, after identity quarantine and parent inheritance.", ""])
@@ -533,17 +537,23 @@ def compare_feeds(
 
     comparable = len(shared) - len(concerns)
     comparable_overlap = comparable / denominator
+    quarantine_ids = {concern.stop_id for concern in concerns}
+    baseline_comparable_known = sum(old_values[stop_id].value in KNOWN_VALUES
+                                    for stop_id in shared if stop_id not in quarantine_ids)
     if comparable == 0 or comparable_overlap < min_overlap:
         status = "inconclusive_low_id_overlap"
     elif losses:
         status = "information_losses_found"
     elif concerns:
         status = "identity_review_required"
+    elif baseline_comparable_known == 0:
+        status = "inconclusive_no_known_baseline"
     else:
         status = "no_information_losses_detected"
 
     return AuditResult(
         status=status,
+        baseline_comparable_known_records=baseline_comparable_known,
         old_records=len(old), new_records=len(new), matched_records=len(shared),
         overlap=overlap, min_overlap=min_overlap,
         old_known_records=sum(v.value in KNOWN_VALUES for v in old_values.values()),

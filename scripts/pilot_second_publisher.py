@@ -108,6 +108,7 @@ def run(output_directory: Path) -> dict:
                 "comparable_overlap": round(audit.comparable_overlap, 6),
                 "identity_concerns": len(audit.identity_concerns),
                 "baseline_known_records": audit.old_known_records,
+                "baseline_comparable_known_records": audit.baseline_comparable_known_records,
                 "candidate_known_records": audit.new_known_records,
                 "known_information_losses": audit.information_losses,
                 "loss_sample": [
@@ -128,6 +129,8 @@ def run(output_directory: Path) -> dict:
         "release_count": len(release_metadata),
         "pair_count": len(pairs),
         "usable_pair_count": sum(p["status"] != "input_unusable" for p in pairs),
+        "evaluable_pair_count": sum(p.get("baseline_comparable_known_records", 0) > 0 for p in pairs),
+        "no_known_baseline_pair_count": sum(p["status"] == "inconclusive_no_known_baseline" for p in pairs),
         "unusable_pair_count": sum(p["status"] == "input_unusable" for p in pairs),
         "source": SOURCE,
         "license": LICENSE,
@@ -142,7 +145,7 @@ def run(output_directory: Path) -> dict:
     lines = [
         "# Transport GZM second-publisher pilot (automated observations)", "",
         f"**Attribution:** {ATTRIBUTION}. [License]({LICENSE}). [Source]({SOURCE}).", "",
-        "The original feed ZIPs are downloaded into a temporary directory and not republished. This is an **unofficial**, independently compiled transit-data feed, not an official agency export.",
+        "The original feed ZIPs are downloaded into a temporary directory and not republished. This is a **GitHub mirror of published ZTM data**, not a separately verified agency archive.",
         "This pilot does **not** show whether actual accessibility changed; it has **not** received publisher review.", "",
         "| Baseline → candidate | Comparable overlap | Known status before / after | Potential metadata losses | Status changes | Identity review flags | Removed / added IDs |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
@@ -157,6 +160,8 @@ def run(output_directory: Path) -> dict:
             f"{pair['known_information_losses']} | {pair['known_status_changes']} | "
             f"{pair['identity_concerns']} | {pair['removed_ids']} / {pair['added_ids']} |"
         )
+    if report["no_known_baseline_pair_count"]:
+        lines.extend(["", f"**Important coverage limitation:** {report['no_known_baseline_pair_count']} pair(s) had zero known baseline wheelchair status among comparable IDs. These are **inconclusive**, not evidence that accessibility metadata was preserved.", ""])
     lines.extend(["", "## Release provenance", "", "| Tag | Publication (UTC) | SHA-256 | Bytes | Parse result |", "| --- | --- | --- | ---: | --- |"])
     for release in release_metadata:
         lines.append(f"| [{release['tag']}]({release['url']}) | {release['published_at_utc']} | `{release['sha256']}` | {release['bytes']} | {release['input_check']} |")

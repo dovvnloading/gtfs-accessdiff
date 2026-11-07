@@ -200,6 +200,27 @@ class AuditTests(unittest.TestCase):
         report = compare_feeds(self.before, self.after, min_overlap=0.5)
         self.assertEqual(report.status, "no_information_losses_detected")
 
+    def test_no_known_comparable_baseline_is_inconclusive(self):
+        make_zip(self.before, [("A", "Stop A", "0", "", "0"),
+                               ("B", "Stop B", "0", "", "")])
+        make_zip(self.after, [("A", "Stop A", "0", "", "0"),
+                              ("B", "Stop B", "0", "", "0")])
+        report = compare_feeds(self.before, self.after)
+        self.assertEqual(report.status, "inconclusive_no_known_baseline")
+        self.assertEqual(report.comparable_records, 2)
+        self.assertEqual(report.baseline_comparable_known_records, 0)
+        self.assertEqual(report.information_losses, 0)
+        self.assertEqual(report.as_dict()["baseline_comparable_known_records"], 0)
+        self.assertEqual(report.as_dict()["schema_version"], "0.5.0")
+        self.assertIn("none of the safely comparable", report.to_markdown())
+
+    def test_unknown_baseline_with_information_gain_still_requires_review(self):
+        make_zip(self.before, [("A", "Stop A", "0", "", "0")])
+        make_zip(self.after, [("A", "Stop A", "0", "", "1")])
+        report = compare_feeds(self.before, self.after)
+        self.assertEqual(report.information_gains, 1)
+        self.assertEqual(report.status, "inconclusive_no_known_baseline")
+
 
 if __name__ == "__main__":
     unittest.main()

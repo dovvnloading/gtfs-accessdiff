@@ -100,6 +100,7 @@ runs:
             identity_concerns=report["identity_concerns_total"],
             information_losses=report["information_losses"],
             status_changes=report["status_changes"],
+            comparison_status=report["status"],
             fail_on_loss=sys.argv[2] == "true",
             fail_on_status_change=sys.argv[3] == "true",
         ))

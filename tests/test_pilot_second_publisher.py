@@ -105,6 +105,19 @@ class GzmPilotTests(unittest.TestCase):
         self.assertEqual(result["pairs"][0]["known_information_losses"], 0)
         self.assertEqual(result["pairs"][0]["status"], "no_information_losses_detected")
 
+    def test_zero_known_baseline_is_not_an_evaluable_negative_result(self) -> None:
+        releases = (("A", "2026-01-01"), ("B", "2026-01-02"))
+        def fake_download(tag: str, target: Path) -> dict[str, str | int]:
+            write_feed(target, "0")
+            return {"url": f"https://example.invalid/{tag}.zip", "sha256": "fixture", "bytes": target.stat().st_size}
+        with patch.object(pilot, "RELEASES", releases), patch.object(pilot, "_download", side_effect=fake_download), patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(self.root / "summary.md")}):
+            report = pilot.run(self.root / "coverage")
+        self.assertEqual(report["usable_pair_count"], 1)
+        self.assertEqual(report["evaluable_pair_count"], 0)
+        self.assertEqual(report["no_known_baseline_pair_count"], 1)
+        self.assertEqual(report["pairs"][0]["status"], "inconclusive_no_known_baseline")
+        self.assertIn("Important coverage limitation", (self.root / "coverage" / "pilot-summary.md").read_text())
+
 
 if __name__ == "__main__":
     unittest.main()

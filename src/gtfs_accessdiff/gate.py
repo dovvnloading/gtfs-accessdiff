@@ -14,6 +14,7 @@ def gate_exit_code(
     identity_concerns: int,
     information_losses: int,
     status_changes: int,
+    comparison_status: str | None = None,
     fail_on_loss: bool = False,
     fail_on_status_change: bool = False,
 ) -> int:
@@ -25,6 +26,8 @@ def gate_exit_code(
     """
     if not (fail_on_loss or fail_on_status_change):
         return 0
+    if comparison_status == "inconclusive_no_known_baseline":
+        return 3
     if comparable_overlap <= 0 or comparable_overlap < min_overlap or identity_concerns > 0:
         return 3
     if fail_on_loss and information_losses > 0:
