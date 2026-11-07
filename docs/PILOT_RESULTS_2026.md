@@ -4,7 +4,7 @@
 
 **Reproduction:** Run `PYTHONPATH=src python scripts/pilot_release_pairs.py` in this repository, or inspect [successful GitHub Actions pilot run 42322378463](https://github.com/dovvnloading/gtfs-accessdiff/actions/runs/42322378463) for downloaded aggregate artifacts. This record was created from the successful run on November 6, 2026 (America/New_York; CI execution in UTC November 7), using [GTFS AccessDiff v0.3 commit `10d3bb2`](https://github.com/dovvnloading/gtfs-accessdiff/commit/10d3bb2901460e0ac736ee826cb14021364c1b44).
 
-**Scope and status:** 20 assets published during 2026 by **one** unofficial feed publisher, compared in **19 adjacent release pairs**. **18 pairs were comparable**; **one was not compared** because the earlier release contained invalid `location_type` metadata. The research is automated only. **No physical accessibility, rider impact, publisher error, or conformance claim has been independently verified.** See [pilot protocol](PILOT.md) and [issue #1](https://github.com/dovvnloading/gtfs-accessdiff/issues/1) for required human review and independent MobilityData validation.
+**Scope and status:** 20 assets published during 2026 by **one** unofficial feed publisher, compared in **19 adjacent release pairs**. **18 pairs were comparable**; **one was not compared** because the earlier release contained invalid `location_type` metadata. The research is automated only. **The 132 raw changes have now been replicated by an independent CSV comparison, and both source archives run through MobilityData Validator v8.0.1**, but publisher intent, physical accessibility, rider impact, and whether the changes are erroneous remain unverified. See [independent verification](INDEPENDENT_VALIDATION_2026.md). See [pilot protocol](PILOT.md) and [issue #1](https://github.com/dovvnloading/gtfs-accessdiff/issues/1) for human review and further independent-feed validation.
 
 ## What was observed
 
@@ -82,12 +82,12 @@ Sources below identify the original publisher archives. **No source ZIPs have be
 ## What is *not* yet established
 
 - Whether the 132 changes were accidental loss, deliberate data correction, a change in source collection practice, or another reason.
-- How the independent [MobilityData GTFS validator](https://github.com/MobilityData/gtfs-validator) evaluates each original archive.
+- The independent validator evaluated the notable two releases and reported zero ERROR-level notices; additional historic releases and the tool's unrecognized system-errors schema still need study. See [verification](INDEPENDENT_VALIDATION_2026.md).
 - Whether agency-maintainer workflows would benefit from this report, or how many review minutes it saves.
 - Whether the same pattern occurs frequently in other independent transit feed publishers.
 
 ### Next research steps
 
-1. Independently validate the two notable release archives, and inspect the relevant `stops.txt` entries and source documentation with a human reviewer.
+1. The independent raw CSV comparison and official validator run have been completed for the notable pair; inspect the relevant `stops.txt` entries and source documentation with a human reviewer next.
 2. Contact the unofficial publisher respectfully for context *before* making operational or safety claims.
 3. Test releases from additional independent agencies with clearly verified redistribution/data-use terms. Track true/false-positive review outcomes and time-to-review.

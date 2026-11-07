@@ -1,6 +1,6 @@
 # Licensed real-feed pilot: reproducible protocol
 
-**Status: 2026 historical pilot completed in GitHub Actions; manual verification and publisher feedback outstanding.** An automated difference is evidence about *published data*, not physical accessibility or a user impact.
+**Status: 2026 historical pilot and independent GTFS validation of the notable release pair completed in GitHub Actions; human/publisher feedback outstanding.** An automated difference is evidence about *published data*, not physical accessibility or a user impact.
 
 ## Goal
 
@@ -14,7 +14,7 @@ The bounded [pilot script](../scripts/pilot_release_pairs.py) uses **all 20 vers
 
 The script downloads each asset into a temporary directory (5 MiB download cap), checks root-level `stops.txt`, and publishes only aggregate JSON/Markdown outputs as CI artifacts. It marks invalid input as unusable instead of reporting a clean comparison; the workflow fails if no pairs are usable. **No publisher ZIP is committed or uploaded as an artifact.**
 
-**Automated outcome:** [the published 2026 results](PILOT_RESULTS_2026.md) include 18 comparable adjacent pairs out of 19, one malformed early release, and a notable set of **132 candidate metadata losses within one release pair**. That result needs human and independent validator review before calling it a feed problem. A versioned [aggregate JSON record](research/pilot-2026-aggregate.json) preserves the release hashes and bounded review samples.
+**Automated outcome:** [the published 2026 results](PILOT_RESULTS_2026.md) include 18 comparable adjacent pairs out of 19, one malformed early release, and a notable set of **132 candidate metadata losses within one release pair**. An [independent raw-field cross-check and official GTFS validator run](INDEPENDENT_VALIDATION_2026.md) replicated all 132 raw changes, but the publisher intent and impact remain unknown. A versioned [aggregate JSON record](research/pilot-2026-aggregate.json) preserves the release hashes and bounded review samples.
 
 To reproduce in an environment that can download GitHub release assets:
 
@@ -24,13 +24,13 @@ PYTHONPATH=src python scripts/pilot_release_pairs.py
 
 Or run the [Licensed real-feed pilot workflow](../.github/workflows/pilot.yml) manually from the GitHub Actions UI. It has `contents: read` permissions and no secrets.
 
-**This first automated pass is not the canonical MobilityData validator**; running that tool independently remains an acceptance criterion.
+**The historical 20-release sweep is not a GTFS conformance check.** The [separate validator cross-check](INDEPENDENT_VALIDATION_2026.md) covers the most notable *two* releases only, not all 20 archives.
 
 ## Human review needed before closing [issue #1](https://github.com/dovvnloading/gtfs-accessdiff/issues/1)
 
 1. Verify hashes, `stops.txt` column values and release provenance. Inspect any found metadata loss in both feeds and any original source station with inherited information.
 2. Distinguish missing published metadata from intentional data cleanup, location-ID reuse, and real operational changes. Review removed/added ID samples; do not pair by name alone.
-3. Run the [MobilityData GTFS validator](https://github.com/MobilityData/gtfs-validator) independently for each selected archive, recording warnings separately.
+3. [Completed for the 132-flag pair](INDEPENDENT_VALIDATION_2026.md): run the [MobilityData GTFS validator](https://github.com/MobilityData/gtfs-validator) and record notices separately. Other releases still need independent validation as appropriate.
 4. Record manual-review time and false positives. If possible, ask the publisher whether the report would be actionable in their workflow.
 5. Publish only attribution-compliant aggregates and reviewed excerpts. Never describe a stop as physically inaccessible based only on a GTFS diff.
 

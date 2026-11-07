@@ -63,13 +63,18 @@ class IndependentVerificationTests(unittest.TestCase):
         result = summarize_validator_report(report, system)
         self.assertEqual(result["notice_count_by_severity"], {"ERROR": 2, "WARNING": 8})
         self.assertEqual(result["system_errors_count"], 0)
+        self.assertEqual(result["system_errors_schema"], "dict")
+        self.assertEqual(result["system_errors_keys"], ["systemErrors"])
         self.assertEqual(result["validator_version"], "8.0.1")
 
     def test_unrecognized_system_error_schema_marked_unknown(self):
         report, system = self.root / "report.json", self.root / "system_errors.json"
         report.write_text('{"notices": []}')
         system.write_text('{"some_new_field": true}')
-        self.assertIsNone(summarize_validator_report(report, system)["system_errors_count"])
+        result = summarize_validator_report(report, system)
+        self.assertIsNone(result["system_errors_count"])
+        self.assertEqual(result["system_errors_schema"], "dict")
+        self.assertEqual(result["system_errors_keys"], ["some_new_field"])
 
     def test_corrupt_notice_shape_is_not_accepted(self):
         report = self.root / "report.json"

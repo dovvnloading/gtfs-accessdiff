@@ -14,7 +14,7 @@ Prioritize human-reviewable evidence over expanding scope. Every significant rul
 - [x] **[#3](https://github.com/dovvnloading/gtfs-accessdiff/issues/3):** Explicit/inherited accessibility provenance and root-cause grouping.
 - [x] **[#4](https://github.com/dovvnloading/gtfs-accessdiff/issues/4):** Bounded reports, CRC/size tests, Unicode and Markdown-sanitizing tests.
 - [x] **[#5](https://github.com/dovvnloading/gtfs-accessdiff/issues/5):** Reusable, opt-in, offline composite GitHub Action with read-only calling workflow.
-- [ ] **[#1](https://github.com/dovvnloading/gtfs-accessdiff/issues/1):** Three release comparisons *and* human review, independent canonical validator, and publisher feedback. First automated pilot is the start, not the finish.
+- [ ] **[#1](https://github.com/dovvnloading/gtfs-accessdiff/issues/1):** Three release comparisons *and* human review, independent canonical validator, and publisher feedback. The 20-release sweep and independent raw/official-validator cross-check of the notable pair are complete; publisher review and broader independent-feed testing remain.
 
 ## Stage 2: Only after a useful pilot
 

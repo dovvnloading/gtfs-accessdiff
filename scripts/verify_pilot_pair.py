@@ -132,11 +132,15 @@ def summarize_validator_report(report_path: Path, system_path: Path) -> dict:
         by_severity[severity] += count
         codes.append({"code": code, "severity": severity, "count": count})
     errors = None
+    system_schema = "missing"
+    system_keys = []
     if system_path.exists():
         system = json.loads(system_path.read_text(encoding="utf-8"))
+        system_schema = type(system).__name__
         if isinstance(system, list):
             errors = len(system)
         elif isinstance(system, dict):
+            system_keys = sorted(system.keys())[:20]
             for key in ("systemErrors", "errors"):
                 if isinstance(system.get(key), list):
                     errors = len(system[key])
@@ -146,6 +150,8 @@ def summarize_validator_report(report_path: Path, system_path: Path) -> dict:
         "notice_count_by_severity": dict(sorted(by_severity.items())),
         "notice_types": sorted(codes, key=lambda x: (-x["count"], x["severity"], x["code"]))[:25],
         "system_errors_count": errors,
+        "system_errors_schema": system_schema,
+        "system_errors_keys": system_keys,
         "system_errors_interpretation": "null means no recognized error array was exposed, not that the validator proved zero errors",
         "interpretation": "Independent GTFS compliance notices; they do not confirm cause, intent or physical effect of the metadata changes.",
     }

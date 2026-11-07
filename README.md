@@ -115,6 +115,7 @@ This release does **not** compare trip-level wheelchair access, pathway connecti
 - [Research and competitor analysis](docs/RESEARCH.md)
 - [Reproducible real-feed pilot protocol](docs/PILOT.md)
 - [2026 real-feed pilot results and original-release SHA-256 provenance](docs/PILOT_RESULTS_2026.md) — 132 **unreviewed metadata loss flags** in one source release, not a physical-accessibility claim
+- [Independent 2026 raw CSV verification and official MobilityData validator results](docs/INDEPENDENT_VALIDATION_2026.md) — separate checks confirmed 132 literal field changes; neither establishes publisher intent or rider impact
 - [Project roadmap](docs/ROADMAP.md)
 - [Issue tracker](https://github.com/dovvnloading/gtfs-accessdiff/issues)
 - [Contribution guide](CONTRIBUTING.md) and [security policy](SECURITY.md)
