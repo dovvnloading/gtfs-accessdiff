@@ -1,0 +1,11 @@
+# Second-publisher validation: Transport GZM (2026)
+
+**Status:** Research pilot set up; results should be taken from the successful GitHub Actions run, if available. All findings are unreviewed.
+
+The initial [Jarosław study](PILOT_RESULTS_2026.md) concerns **one unofficial publisher**. This separate study uses **Zarząd Transportu Metropolitalnego (ZTM / Transport GZM)** GTFS data from its [official open-data portal](https://otwartedane.metropoliagzm.pl/dataset/rozklady-jazdy-i-lokalizacja-przystankow-gtfs-wersja-rozszerzona) with a Creative Commons Attribution license. The [GitHub mirror](https://github.com/TransportGZM-GTFS-mirror/TransportGZM-GTFS-extended-ver) labels the feed data **CC BY 4.0**; its MIT license covers its tooling, **not the transit data**. Attribution: ZTM / Transport GZM, licensed CC BY 4.0.
+
+The pilot uses three **versioned** assets named `TransportGZM-GTFS.zip` (no moving `latest` alias): [Aug 31](https://github.com/TransportGZM-GTFS-mirror/TransportGZM-GTFS-extended-ver/releases/tag/31-08-2026), [Oct 30](https://github.com/TransportGZM-GTFS-mirror/TransportGZM-GTFS-extended-ver/releases/tag/30-10-2026), and [Oct 31](https://github.com/TransportGZM-GTFS-mirror/TransportGZM-GTFS-extended-ver/releases/tag/31-10-2026). The exact SHA-256 hashes and byte counts are pinned in [the runner](../scripts/pilot_second_publisher.py), which refuses changed downloads. Comparing August→October and October 30→31 gives both a substantial release gap and a close pair to check ID continuity.
+
+Run: `PYTHONPATH=src python scripts/pilot_second_publisher.py`, or run **Transport GZM second-publisher research pilot** in GitHub Actions. The workflow has read-only permissions, no secrets and no automatic schedule; downloaded GTFS archives remain in a temporary directory, and only aggregate JSON/Markdown reports are uploaded. Invalid input or low shared stop-ID overlap must not be interpreted as success.
+
+**Scope and caveats:** Changes to published GTFS fields do not prove changed physical wheelchair access or a publisher mistake. Even zero flagged losses is informative only for the selected releases. No publisher has been contacted; independent human triage and usefulness assessment are still required before closing [Issue #1](https://github.com/dovvnloading/gtfs-accessdiff/issues/1).
