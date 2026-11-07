@@ -169,7 +169,7 @@ def verify(output_directory: Path) -> dict:
         validations = {}
         for label, _, _, date in INPUTS:
             output = root / (label + "-validator")
-            command = ["java", "-Xmx2g", "-jar", str(jar), "--input", str(feeds[label]), "--output", str(output), "--date", date, "--skip_validator_update"]
+            command = ["java", "-Xmx2g", "-jar", str(jar), "-i", str(feeds[label]), "-o", str(output), "-d", date, "-svu"]
             proc = subprocess.run(command, capture_output=True, text=True, timeout=240, check=False)
             if not (output / "report.json").exists():
                 raise RuntimeError(f"Official validator failed for {label}, exit={proc.returncode}, stderr={proc.stderr[-1500:]}")
