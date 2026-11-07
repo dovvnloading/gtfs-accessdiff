@@ -36,7 +36,7 @@ jobs:
           import json, os
           from pathlib import Path
           report = json.loads(Path(os.environ["JSON_REPORT"]).read_text(encoding="utf-8"))
-          assert report["schema_version"] == "0.4.0"
+          assert report["schema_version"] == "0.5.0"
           assert report["status_transition_total"] == report["comparable_records"]
           assert sum(row["records"] for row in report["status_transitions"]) == report["comparable_records"]
           assert any(row["baseline_value"] == "1" and row["candidate_value"] == "unknown" for row in report["status_transitions"])
@@ -147,4 +147,43 @@ jobs:
           assert data['comparable_records'] == 0
           assert data['status'] == 'inconclusive_low_id_overlap'
           assert data['status_transition_total'] == 0
+          PYTHON
+
+      - name: Generate unknown-only baseline/candidate fixtures
+        run: |
+          python - <<'PYTHON'
+          import csv, io, os, zipfile
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'gtfs-unknown-only'
+          root.mkdir(parents=True, exist_ok=True)
+          for name in ('baseline', 'candidate'):
+              buffer = io.StringIO(newline='')
+              writer = csv.writer(buffer)
+              writer.writerow(['stop_id', 'stop_name', 'wheelchair_boarding'])
+              writer.writerow(['UNKNOWN', 'Synthetic unknown stop', '0'])
+              with zipfile.ZipFile(root / (name + '.zip'), 'w') as archive:
+                  archive.writestr('stops.txt', buffer.getvalue())
+          PYTHON
+      - name: Confirm zero-known baseline is inconclusive with opt-in gate
+        id: action_unknown_baseline
+        continue-on-error: true
+        uses: ./
+        with:
+          baseline: ${{ runner.temp }}/gtfs-unknown-only/baseline.zip
+          candidate: ${{ runner.temp }}/gtfs-unknown-only/candidate.zip
+          report-directory: ${{ runner.temp }}/gtfs-unknown-only/reports
+          fail-on-loss: 'true'
+      - name: Verify unknown baseline report and gate outcome
+        env:
+          UNKNOWN_GATE_OUTCOME: ${{ steps.action_unknown_baseline.outcome }}
+        run: |
+          test "$UNKNOWN_GATE_OUTCOME" = failure
+          python - <<'PYTHON'
+          import json, os
+          from pathlib import Path
+          file = Path(os.environ['RUNNER_TEMP']) / 'gtfs-unknown-only' / 'reports' / 'audit.json'
+          report = json.loads(file.read_text(encoding='utf-8'))
+          assert report['status'] == 'inconclusive_no_known_baseline'
+          assert report['baseline_comparable_known_records'] == 0
+          assert report['comparable_records'] == 1
           PYTHON
