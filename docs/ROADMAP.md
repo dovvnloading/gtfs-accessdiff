@@ -21,6 +21,7 @@ Prioritize human-reviewable evidence over expanding scope. Every significant rul
 - [x] [#7](https://github.com/dovvnloading/gtfs-accessdiff/issues/7): Exact effective accessibility-status transition matrix, including unchanged values and information gains.
 - [x] Distinct, opt-in known-status-change CI gate; shared exit policy and explicit incomplete-review priority.
 - [x] Synthetic CLI/Action coverage for 1 ↔ 2 changes; report-only defaults to nonblocking.
+- [x] [#9](https://github.com/dovvnloading/gtfs-accessdiff/issues/9): Zero comparable IDs fail closed for opt-in gates even when the overlap threshold is configured to zero.
 
 ## Stage 2: After a useful pilot and maintainer feedback
 

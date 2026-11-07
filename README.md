@@ -46,7 +46,7 @@ The status transition matrix counts **every safely comparable shared ID**, inclu
 
 We **never** call a `1 → 2` change an information loss. Such changes are reported separately as `status_change`, because a correction or operational change may explain them. `0`/empty indicates unknown for parentless stops and inherits an explicit parent value for appropriate child locations, per the [GTFS Schedule specification](https://gtfs.org/documentation/schedule/reference/).
 
-To reduce unsupported matches, IDs with changed `location_type`, or a coordinate movement greater than 500 meters by default, are *quarantined for identity review*. A child inheriting information from a suspicious source station is also quarantined. **We do not automatically match new/removed IDs by name or position.** The default comparison requires at least 75% safely comparable IDs relative to the larger feed; use `--min-overlap` to configure it.
+To reduce unsupported matches, IDs with changed `location_type`, or a coordinate movement greater than 500 meters by default, are *quarantined for identity review*. A child inheriting information from a suspicious source station is also quarantined. **We do not automatically match new/removed IDs by name or position.** The default comparison requires at least 75% safely comparable IDs relative to the larger feed; use `--min-overlap` to configure it. **Zero safely comparable IDs is always inconclusive—even with `--min-overlap 0`**; a threshold override cannot turn an entirely unexamined release into a clean result.
 
 ## Using the GitHub Action
 

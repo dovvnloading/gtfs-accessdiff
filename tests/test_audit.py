@@ -185,6 +185,15 @@ class AuditTests(unittest.TestCase):
         with self.assertRaisesRegex(FeedError, "no stop records"):
             load_stops(self.before)
 
+    def test_no_comparable_ids_cannot_be_clean_even_with_zero_threshold(self):
+        make_zip(self.before, [("A", "A", "0", "", "1")])
+        make_zip(self.after, [("B", "B", "0", "", "1")])
+        report = compare_feeds(self.before, self.after, min_overlap=0.0)
+        self.assertEqual(report.status, "inconclusive_low_id_overlap")
+        self.assertEqual(report.comparable_records, 0)
+        self.assertEqual(sum(x.records for x in report.status_transitions), 0)
+        self.assertIn("Inconclusive:", report.to_markdown())
+
     def test_override_overlap_threshold(self):
         make_zip(self.before, [("A", "A", "0", "", "1"), ("B", "B", "0", "", "1")])
         make_zip(self.after, [("A", "A", "0", "", "1"), ("C", "C", "0", "", "1")])

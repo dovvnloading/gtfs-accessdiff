@@ -25,7 +25,7 @@ def gate_exit_code(
     """
     if not (fail_on_loss or fail_on_status_change):
         return 0
-    if comparable_overlap < min_overlap or identity_concerns > 0:
+    if comparable_overlap <= 0 or comparable_overlap < min_overlap or identity_concerns > 0:
         return 3
     if fail_on_loss and information_losses > 0:
         return 2

@@ -178,7 +178,7 @@ class AuditResult:
             f"| Added IDs | {self.added_record_ids} |",
             f"| Added IDs with known candidate status | {self.added_known_records} |", "",
         ]
-        if self.comparable_overlap < self.min_overlap:
+        if self.comparable_records == 0 or self.comparable_overlap < self.min_overlap:
             lines.extend([
                 f"**Inconclusive:** comparable coverage is below the configured {self.min_overlap:.0%} threshold. Changed IDs and possible ID reuse can make comparisons incomplete.", "",
             ])
@@ -533,7 +533,7 @@ def compare_feeds(
 
     comparable = len(shared) - len(concerns)
     comparable_overlap = comparable / denominator
-    if comparable_overlap < min_overlap:
+    if comparable == 0 or comparable_overlap < min_overlap:
         status = "inconclusive_low_id_overlap"
     elif losses:
         status = "information_losses_found"
