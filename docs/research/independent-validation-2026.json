@@ -215,8 +215,12 @@
         }
       ],
       "process_exit_code": 0,
-      "system_errors_count": null,
+      "system_errors_count": 0,
       "system_errors_interpretation": "null means no recognized error array was exposed, not that the validator proved zero errors",
+      "system_errors_keys": [
+        "notices"
+      ],
+      "system_errors_schema": "dict",
       "validator_version": "8.0.1"
     },
     "candidate": {
@@ -279,8 +283,12 @@
         }
       ],
       "process_exit_code": 0,
-      "system_errors_count": null,
+      "system_errors_count": 0,
       "system_errors_interpretation": "null means no recognized error array was exposed, not that the validator proved zero errors",
+      "system_errors_keys": [
+        "notices"
+      ],
+      "system_errors_schema": "dict",
       "validator_version": "8.0.1"
     }
   }

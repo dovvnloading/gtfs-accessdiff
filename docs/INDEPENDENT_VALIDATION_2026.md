@@ -29,12 +29,12 @@ This verifies the literal before/after data difference independently. It does **
 
 ## MobilityData validator results (conformance, not regression detection)
 
-| Release | ERROR notices | WARNING notices | INFO notices |
-| --- | ---: | ---: | ---: |
-| May 14, 2026 baseline | 0 | 711 | 4 |
-| June 4, 2026 candidate | 0 | 77 | 40 |
+| Release | ERROR notices | WARNING notices | INFO notices | System-error notices |
+| --- | ---: | ---: | ---: | ---: |
+| May 14, 2026 baseline | 0 | 711 | 4 | 0 |
+| June 4, 2026 candidate | 0 | 77 | 40 | 0 |
 
-The largest warning group in the baseline concerned `equal_shape_distance_same_coordinates` (703 notices); the candidate had 51 of these, plus 16 `stop_too_far_from_shape` warnings. These are not accessibility-regression verdicts. The official validator's zero ERROR-notice count does **not** imply the feeds are complete or that optional accessibility metadata did not disappear. The validator's system-errors report was not interpreted in the initial automated summary, so we do not claim a separate zero system-error count.
+The largest warning group in the baseline concerned `equal_shape_distance_same_coordinates` (703 notices); the candidate had 51 of these, plus 16 `stop_too_far_from_shape` warnings. These are not accessibility-regression verdicts. The official validator's zero ERROR-notice count does **not** imply the feeds are complete or that optional accessibility metadata did not disappear. Both generated `system_errors.json` files contained a `notices` array with zero entries. These zero ERROR/system-error counts **do not** imply that optional wheelchair-accessibility metadata was complete or unchanged.
 
 ## How to reproduce
 

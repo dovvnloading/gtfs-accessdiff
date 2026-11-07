@@ -82,7 +82,7 @@ Sources below identify the original publisher archives. **No source ZIPs have be
 ## What is *not* yet established
 
 - Whether the 132 changes were accidental loss, deliberate data correction, a change in source collection practice, or another reason.
-- The independent validator evaluated the notable two releases and reported zero ERROR-level notices; additional historic releases and the tool's unrecognized system-errors schema still need study. See [verification](INDEPENDENT_VALIDATION_2026.md).
+- The independent validator evaluated the notable two releases and reported zero ERROR-level notices; both validated archives had zero system-error notices; the remaining historical releases still need independent study. See [verification](INDEPENDENT_VALIDATION_2026.md).
 - Whether agency-maintainer workflows would benefit from this report, or how many review minutes it saves.
 - Whether the same pattern occurs frequently in other independent transit feed publishers.
 
