@@ -1,0 +1,32 @@
+name: Transport GZM second-publisher research pilot
+on:
+  workflow_dispatch:
+  push:
+    branches: [research/issue-1-independent-publisher]
+    paths:
+      - 'scripts/pilot_second_publisher.py'
+      - '.github/workflows/pilot-second-publisher.yml'
+      - 'src/gtfs_accessdiff/**'
+permissions:
+  contents: read
+jobs:
+  archived-feed-comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compare two pairs from second publisher using pinned, licensed 2026 releases
+        env:
+          PYTHONPATH: src
+          GTFS_GZM_REPORT_DIR: second-publisher-results
+        run: python scripts/pilot_second_publisher.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: second-publisher-aggregate-results
+          path: second-publisher-results/
+          if-no-files-found: warn
+          retention-days: 30
