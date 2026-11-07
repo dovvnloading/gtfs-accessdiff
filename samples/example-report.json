@@ -1,8 +1,24 @@
 {
+  "added_id_samples": [
+    {
+      "effective_wheelchair_boarding": "1",
+      "location_type": "0",
+      "parent_station": "",
+      "stop_id": "E",
+      "stop_name": "New stop"
+    }
+  ],
+  "added_known_records": 1,
   "added_record_ids": 1,
+  "comparable_overlap": 0.8333333333333334,
+  "comparable_records": 5,
   "disclaimer": "Changes to published metadata do not prove physical accessibility changes.",
   "findings": [
     {
+      "baseline_raw_value": "2",
+      "baseline_source_id": "B",
+      "candidate_raw_value": "1",
+      "candidate_source_id": "B",
       "category": "status_change",
       "explanation": "Published wheelchair status changed; confirm why before releasing.",
       "new_value": "1",
@@ -11,6 +27,10 @@
       "stop_name": "Oak Street"
     },
     {
+      "baseline_raw_value": "0",
+      "baseline_source_id": "STA",
+      "candidate_raw_value": "0",
+      "candidate_source_id": null,
       "category": "information_loss",
       "explanation": "Previously published wheelchair status became unknown.",
       "new_value": "unknown",
@@ -19,6 +39,10 @@
       "stop_name": "Central Station Platform"
     },
     {
+      "baseline_raw_value": "1",
+      "baseline_source_id": "STA",
+      "candidate_raw_value": "0",
+      "candidate_source_id": null,
       "category": "information_loss",
       "explanation": "Previously published wheelchair status became unknown.",
       "new_value": "unknown",
@@ -27,8 +51,26 @@
       "stop_name": "Central Station"
     }
   ],
+  "findings_omitted": 0,
+  "findings_total": 3,
+  "identity_concerns": [],
+  "identity_concerns_omitted": 0,
+  "identity_concerns_total": 0,
+  "identity_distance_meters": 500.0,
   "information_gains": 1,
   "information_losses": 2,
+  "inherited_causes": [
+    {
+      "affected_records": 1,
+      "affected_stop_id_sample": [
+        "PLAT"
+      ],
+      "baseline_source_id": "STA",
+      "sample_omitted": 0
+    }
+  ],
+  "inherited_causes_omitted": 0,
+  "inherited_causes_total": 1,
   "matched_records": 5,
   "min_overlap": 0.75,
   "new_known_records": 4,
@@ -36,8 +78,18 @@
   "old_known_records": 5,
   "old_records": 6,
   "overlap": 0.8333333333333334,
+  "removed_id_samples": [
+    {
+      "effective_wheelchair_boarding": "1",
+      "location_type": "0",
+      "parent_station": "",
+      "stop_id": "D",
+      "stop_name": "Removed stop"
+    }
+  ],
+  "removed_known_records": 1,
   "removed_record_ids": 1,
-  "schema_version": "0.2.0",
+  "schema_version": "0.3.0",
   "scope": "GTFS stops.txt wheelchair_boarding, including parent inheritance",
   "status": "information_losses_found",
   "status_changes": 1

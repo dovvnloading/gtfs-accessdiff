@@ -1,129 +1,125 @@
 # GTFS AccessDiff
 
-**Detect lost accessibility information between public-transit data releases.**
+[![Tests](https://github.com/dovvnloading/gtfs-accessdiff/actions/workflows/tests.yml/badge.svg)](https://github.com/dovvnloading/gtfs-accessdiff/actions/workflows/tests.yml)
 
-A free, offline-first, deterministic Python CLI that compares two versions of a
-[General Transit Feed Specification](https://gtfs.org/) (GTFS) feed and points
-out where known wheelchair-accessibility metadata became unknown.
+**Review lost wheelchair-accessibility information between published GTFS feed releases.**
 
-> **Status:** working v0.2 prototype. Not production-certified, not a live rider
-> information service, and not a substitute for the canonical GTFS validator.
+GTFS AccessDiff is a free, offline-first Python CLI **and optional composite GitHub Action**. It compares two local GTFS ZIPs (or extracted directories) and finds known `stops.txt.wheelchair_boarding` information that became unknown. Parent-station inheritance is resolved and explained. It has no paid APIs, external runtime dependencies, accounts or telemetry.
 
-## Why this exists
+> **Status:** v0.3 research prototype. Not a safety certification, GTFS conformance validator, or live rider information service. A change in the *data* never proves a physical access change.
 
-Transit agencies periodically publish updated data feeds. A feed can be
-syntactically valid while dropping information from earlier versions. Someone
-who depends on a trip planner cannot tell whether a missing accessibility
-value means a stop became inaccessible or merely lost its metadata.
+## Quick start
 
-Our initial question is deliberately narrow: **For the same published stop ID,
-was a known `wheelchair_boarding` value replaced with an unknown value?**
-
-GTFS distinguishes `1` (accessible boarding indicated), `2` (inaccessible
-boarding indicated), and `0` or blank (unknown; children may inherit the parent
-station's value). We resolve inheritance before comparing. We do not infer
-real-world accessibility, and we don't reclassify a `1 → 2` change as information
-*loss*: we flag it separately for human review.
-
-## See it work (no dependencies)
-
-Python 3.11+ and the standard library are enough to run from the source tree:
+Use Python 3.11 or newer. No installation is needed from the repository root:
 
 ```bash
 PYTHONPATH=src python -m gtfs_accessdiff samples/baseline.zip samples/candidate.zip
-```
-
-Or install the CLI after cloning:
-
-```bash
-python -m pip install -e .
-gtfs-accessdiff samples/baseline.zip samples/candidate.zip
-```
-
-The sample uses **invented stops**, not real agency data. Example summary:
-
-```text
-Result: information_losses_found
-Stop IDs matched: 5 of 6 (83.3%)
-Known information lost: 2
-Known status changed: 1
-Information gains: 1
-```
-
-Produce a machine-readable JSON or Markdown report:
-
-```bash
-gtfs-accessdiff samples/baseline.zip samples/candidate.zip \
-  --format json --output report.json
-
-gtfs-accessdiff samples/baseline.zip samples/candidate.zip \
-  --format markdown --output report.md
-```
-
-Only **opt into CI failure after reviewing your feed's ID stability**:
-
-```bash
-gtfs-accessdiff previous.zip pending.zip --fail-on-loss
-```
-
-Exit codes: `0` normal (including findings without opt-in gating); `1` invalid
-input; `2` known accessibility metadata loss with `--fail-on-loss`; `3`
-inconclusive ID matching with `--fail-on-loss`. The ID-overlap threshold defaults
-to 75% of the larger feed's stop count (`--min-overlap 0.75`).
-
-## What v0.2 detects
-
-- Explicit `1` or `2` becoming `0` or blank for an unchanged `stop_id`.
-- Effective accessibility status becoming unknown because parent-station data
-  disappeared, even if the child still has `wheelchair_boarding=0`.
-- Known accessibility statuses changing `1 ↔ 2`, clearly marked for **review**.
-- Counts of added/removed IDs, unknown-to-known gains, and overall matching
-  coverage; low-overlap comparisons are explicitly inconclusive.
-- Deterministic Markdown and JSON reports, with no uploaded data, API key,
-  account, model call, server, or external dependency.
-
-## What it does **not** detect (yet)
-
-- Trip-level wheelchair access (`trips.txt`) or accessible paths (`pathways.txt`).
-- Missing or changed `tts_stop_name` text-to-speech metadata.
-- Live elevator outages, physical accessibility, actual vehicle availability,
-  or whether an agency's facts are correct in the real world.
-- Stops whose IDs were changed between feeds: these are counted as removed/added
-  rather than called accessibility regressions.
-- Nested GTFS archives; supply a feed ZIP with `stops.txt` at its root, or an
-  unpacked GTFS directory.
-
-A report saying **no information loss detected** does not prove accessibility or
-GTFS compliance. Always use the [MobilityData GTFS validator](https://github.com/MobilityData/gtfs-validator)
-for conformance and use human validation for agency-specific facts.
-
-## How the comparison works
-
-1. Read `stops.txt` from both local feed ZIPs or directories without extracting
-   arbitrary ZIP members or making network requests.
-2. Check unique stop identifiers, allowed wheelchair data values, and parent
-   references. Resolve `0`/blank child values by following `parent_station`.
-3. Compare records with the same `stop_id` only.
-4. Classify `known → unknown` as information loss; `1 ↔ 2` as a review-needed
-   metadata change; `unknown → known` as an improvement.
-5. Mark a comparison inconclusive if shared IDs represent less than the configured share of the **larger** feed. A shrinking feed cannot appear fully matched merely because its remaining IDs are unchanged. Emit stable JSON or
-   Markdown with evidence tied to stop IDs.
-
-## Tests and contribution guide
-
-```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), the [research and competitor review](docs/RESEARCH.md),
-and the [incremental GitHub backlog](docs/ROADMAP.md), and the [real-world pilot protocol](docs/PILOT.md), and the [GitHub publishing guide](docs/PUBLISH.md).
+To install a normal command:
 
-We intend to complement, not replace, existing open-source GTFS tools such as:
-[MobilityData's validator](https://github.com/MobilityData/gtfs-validator),
-[BlinkTag's accessibility validator](https://github.com/BlinkTagInc/gtfs-accessibility-validator),
-and the [GTFS Diff specification](https://github.com/MobilityData/gtfs-diff).
+```bash
+python -m pip install -e .
+gtfs-accessdiff samples/baseline.zip samples/candidate.zip --format markdown
+```
 
-**License:** MIT. Synthetic examples are freely usable under the repository's
-license; real GTFS data must be handled under each publisher's terms.
+Create JSON and Markdown reports for human review:
 
-**Project status:** See the [GitHub issues](https://github.com/dovvnloading/gtfs-accessdiff/issues) for scoped tasks. No live transit-feed audit has yet been verified.
+```bash
+gtfs-accessdiff previous.zip pending.zip --format json --output report.json
+gtfs-accessdiff previous.zip pending.zip --format markdown --output report.md
+```
+
+For a preview, both ZIPs must have `stops.txt` at the root. If feeds come as nested archives, choose the *same* mode and extract its GTFS ZIP in both versions first.
+
+### What the reports mean
+
+| Result | Interpretation |
+| --- | --- |
+| `information_losses_found` | One or more **comparable** stop IDs changed from known `1`/`2` to unknown. |
+| `identity_review_required` | At least one shared ID has a suspicious identity change; no comparable information losses were found. |
+| `inconclusive_low_id_overlap` | Too few records were safely comparable to trust a negative result. |
+| `no_information_losses_detected` | No metadata losses among comparable IDs **within this tool's narrow scope**. |
+
+We **never** call a `1 → 2` change an information loss. Such changes are reported separately as `status_change`, because a correction or operational change may explain them. `0`/empty indicates unknown for parentless stops and inherits an explicit parent value for appropriate child locations, per the [GTFS Schedule specification](https://gtfs.org/documentation/schedule/reference/).
+
+To reduce unsupported matches, IDs with changed `location_type`, or a coordinate movement greater than 500 meters by default, are *quarantined for identity review*. A child inheriting information from a suspicious source station is also quarantined. **We do not automatically match new/removed IDs by name or position.** The default comparison requires at least 75% safely comparable IDs relative to the larger feed; use `--min-overlap` to configure it.
+
+## Using the GitHub Action
+
+Projects already managing two GTFS archives can add our no-network composite action to their own GitHub Actions workflow. It reads only specified local paths, emits both JSON and Markdown, and uses no GitHub token. The **caller** decides if and when to upload reports.
+
+```yaml
+name: GTFS accessibility review
+on: [workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: dovvnloading/gtfs-accessdiff@main # Pin a reviewed commit SHA for production use
+        with:
+          baseline: feeds/approved.zip
+          candidate: feeds/proposed.zip
+          fail-on-loss: 'false' # Review the feed's ID stability before enabling
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gtfs-accessibility-review
+          path: gtfs-accessdiff-reports/
+```
+
+See [the complete workflow example](examples/github-action.yml). The action **does not** download provider feeds, execute data as code, open PR comments, or need write permissions. Avoid using `pull_request_target` for untrusted feed changes.
+
+### Opt-in CI gate
+
+After validating your feed's stop-ID stability, add `--fail-on-loss` to the CLI, or set `fail-on-loss: 'true'` in the Action. The reports are generated *before* optional gating. Exit codes:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Report generated; no blocking condition, or gating not enabled. |
+| `1` | Invalid/unreadable input or output failure. |
+| `2` | Comparable metadata loss, with opt-in gate. |
+| `3` | ID overlap inconclusive or identity review required, with opt-in gate. |
+
+`--max-findings 200` caps individual accessibility and identity findings displayed in JSON/Markdown, **not** aggregate counts. Bounded samples of up to 25 removed and added IDs appear separately. Reports include `findings_total`, `findings_omitted`, source station IDs for inherited values, and groups of children affected by a common source.
+
+Additional CLI settings:
+
+```bash
+gtfs-accessdiff previous.zip pending.zip \
+  --identity-distance-meters 500 \
+  --min-overlap 0.75 \
+  --max-findings 200 \
+  --format json --output report.json
+```
+
+## Comparison design and limitations
+
+1. Parse `stops.txt` from both input feeds (bounded to 64 MiB per member) without extracting ZIP files or using the network.
+2. Reject duplicate IDs/columns, malformed CSV and inconsistent parent references. Resolve explicit and inherited wheelchair values with the source stop ID.
+3. Compare shared stop IDs **only**. Quarantine changed location types, large coordinate moves and their inherited dependents for human identity review. Missing/malformed coordinates are not used to infer identity.
+4. Classify known → unknown as metadata loss, known ↔ known as status change, and unknown → known as information gain. Report removed/added IDs separately, without fuzzy pairing.
+5. Export deterministic, versioned JSON (`schema_version: 0.3.0`) or sanitized Markdown with exact aggregate counts. Low comparable overlap is inconclusive.
+
+This release does **not** compare trip-level wheelchair access, pathway connectivity, text-to-speech fields, live elevator information, stop identities after an ID change, or real-world physical accessibility. Location-name changes alone do not prove a change of identity. All safety-relevant conclusions require human review and the canonical [MobilityData GTFS validator](https://github.com/MobilityData/gtfs-validator) for independent standards conformance.
+
+## Research and open-source development
+
+- [Research and competitor analysis](docs/RESEARCH.md)
+- [Reproducible real-feed pilot protocol](docs/PILOT.md)
+- [2026 real-feed pilot results and original-release SHA-256 provenance](docs/PILOT_RESULTS_2026.md) — 132 **unreviewed metadata loss flags** in one source release, not a physical-accessibility claim
+- [Independent 2026 raw CSV verification and official MobilityData validator results](docs/INDEPENDENT_VALIDATION_2026.md) — separate checks confirmed 132 literal field changes; neither establishes publisher intent or rider impact
+- [Project roadmap](docs/ROADMAP.md)
+- [Issue tracker](https://github.com/dovvnloading/gtfs-accessdiff/issues)
+- [Contribution guide](CONTRIBUTING.md) and [security policy](SECURITY.md)
+
+Synthetic sample GTFS ZIPs and example outputs are included for tests only. **Never redistribute another agency's archives here without confirming that the license permits it.** The project's code and synthetic samples are MIT licensed. Publisher data carries its own terms.
+
+We intend to complement—not replace—the [MobilityData validator](https://github.com/MobilityData/gtfs-validator), [GTFS Diff](https://github.com/MobilityData/gtfs-diff), and existing accessibility checks.

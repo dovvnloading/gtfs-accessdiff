@@ -62,6 +62,36 @@ class CliTests(unittest.TestCase):
         self.assertIn("must not overwrite", errors.getvalue())
         self.assertEqual(source.read_text(), "stop_id,wheelchair_boarding\nA,1\n")
 
+    def test_identity_review_exit_three_even_with_high_overlap(self):
+        self.before.write_bytes(b"")
+        self.after.write_bytes(b"")
+        from test_provenance import make_zip
+        make_zip(self.before, [("A", "A", "0", "", "1", "40", "-75"),
+                               ("B", "B", "0", "", "1", "40", "-75")])
+        make_zip(self.after, [("A", "A", "0", "", "1", "40", "-75"),
+                              ("B", "B", "0", "", "0", "41", "-75")])
+        self.assertEqual(self.call("--fail-on-loss", "--min-overlap", "0.5")[0], 3)
+        self.assertEqual(self.call("--fail-on-loss", "--min-overlap", "0.5", "--identity-distance-meters", "200000")[0], 2)
+
+    def test_reject_nonfinite_cli_thresholds(self):
+        import contextlib
+        import io
+        for option, value in (("--min-overlap", "nan"), ("--min-overlap", "inf"),
+                              ("--identity-distance-meters", "inf"), ("--max-findings", "0")):
+            with self.subTest(option=option, value=value):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit) as e:
+                        main([str(self.before), str(self.after), option, value])
+                self.assertEqual(e.exception.code, 2)
+
+    def test_fail_on_loss_with_report_output_is_still_written(self):
+        make_zip(self.before, [("A", "A", "0", "", "1")])
+        make_zip(self.after, [("A", "A", "0", "", "0")])
+        dest = self.root / "report.json"
+        status, _, _ = self.call("--fail-on-loss", "--format", "json", "--output", str(dest))
+        self.assertEqual(status, 2)
+        self.assertEqual(__import__("json").loads(dest.read_text())["information_losses"], 1)
+
     def test_json_to_file(self):
         make_zip(self.before, [("A", "A", "0", "", "1")])
         make_zip(self.after, [("A", "A", "0", "", "1")])

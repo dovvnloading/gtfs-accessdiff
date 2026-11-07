@@ -1,0 +1,91 @@
+name: GTFS AccessDiff
+branding:
+  icon: git-compare
+  color: blue
+description: Compare two locally available GTFS feeds for wheelchair-accessibility metadata regressions. No network calls or account credentials.
+inputs:
+  baseline:
+    description: Path to the earlier GTFS ZIP or extracted directory.
+    required: true
+  candidate:
+    description: Path to the proposed GTFS ZIP or extracted directory.
+    required: true
+  report-directory:
+    description: Relative or absolute directory for Markdown and JSON reports.
+    required: false
+    default: gtfs-accessdiff-reports
+  min-overlap:
+    description: Minimum comparable ID coverage in [0, 1].
+    required: false
+    default: '0.75'
+  identity-distance-meters:
+    description: Quarantine reused IDs moving more than this threshold.
+    required: false
+    default: '500'
+  max-findings:
+    description: Maximum individual accessibility and identity findings included in reports; aggregate counts remain exact.
+    required: false
+    default: '200'
+  fail-on-loss:
+    description: Opt-in nonzero exit for detected losses (2) or incomplete identity matching (3).
+    required: false
+    default: 'false'
+outputs:
+  json-report:
+    description: Path to the machine-readable report.
+    value: ${{ steps.report.outputs.json_report }}
+  markdown-report:
+    description: Path to the human-readable report.
+    value: ${{ steps.report.outputs.markdown_report }}
+runs:
+  using: composite
+  steps:
+    - name: Generate accessibility review reports
+      id: report
+      shell: bash
+      env:
+        BASELINE: ${{ inputs.baseline }}
+        CANDIDATE: ${{ inputs.candidate }}
+        REPORT_DIR: ${{ inputs.report-directory }}
+        MIN_OVERLAP: ${{ inputs.min-overlap }}
+        IDENTITY_METERS: ${{ inputs.identity-distance-meters }}
+        MAX_FINDINGS: ${{ inputs.max-findings }}
+      run: |
+        set -euo pipefail
+        if [[ "$REPORT_DIR" == *$'\n'* || "$REPORT_DIR" == *$'\r'* ]]; then
+          echo 'Report path cannot contain newlines' >&2
+          exit 1
+        fi
+        BASELINE="$(realpath -e -- "$BASELINE")"
+        CANDIDATE="$(realpath -e -- "$CANDIDATE")"
+        mkdir -p -- "$REPORT_DIR"
+        REPORT_DIR="$(realpath -e -- "$REPORT_DIR")"
+        args=("$BASELINE" "$CANDIDATE" --min-overlap "$MIN_OVERLAP" --identity-distance-meters "$IDENTITY_METERS" --max-findings "$MAX_FINDINGS")
+        PYTHONPATH="${{ github.action_path }}/src" python3 -m gtfs_accessdiff "${args[@]}" --format json --output "$REPORT_DIR/audit.json"
+        PYTHONPATH="${{ github.action_path }}/src" python3 -m gtfs_accessdiff "${args[@]}" --format markdown --output "$REPORT_DIR/audit.md"
+        echo "json_report=$REPORT_DIR/audit.json" >> "$GITHUB_OUTPUT"
+        echo "markdown_report=$REPORT_DIR/audit.md" >> "$GITHUB_OUTPUT"
+    - name: Apply optional CI gate
+      shell: bash
+      env:
+        FAIL_ON_LOSS: ${{ inputs.fail-on-loss }}
+        JSON_REPORT: ${{ steps.report.outputs.json_report }}
+      run: |
+        set -euo pipefail
+        case "$FAIL_ON_LOSS" in
+          false) exit 0 ;;
+          true) ;;
+          *) echo 'fail-on-loss must be true or false' >&2; exit 1 ;;
+        esac
+        # Gate the exact report that is uploaded instead of recomputing a third
+        # time. This also avoids a feed changing between the report and gate.
+        python3 - "$JSON_REPORT" <<'PYCODE'
+        import json
+        import sys
+        from pathlib import Path
+        report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+        if report["status"] in {"inconclusive_low_id_overlap", "identity_review_required"}:
+            sys.exit(3)
+        if report["information_losses"]:
+            sys.exit(2)
+        PYCODE
