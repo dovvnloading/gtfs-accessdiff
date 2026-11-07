@@ -1,6 +1,6 @@
 # Licensed real-feed pilot: reproducible protocol
 
-**Status: automated pilot runnable on GitHub Actions; manual verification and publisher feedback outstanding.** An automated difference is evidence about *published data*, not physical accessibility or a user impact.
+**Status: 2026 historical pilot completed in GitHub Actions; manual verification and publisher feedback outstanding.** An automated difference is evidence about *published data*, not physical accessibility or a user impact.
 
 ## Goal
 
@@ -12,7 +12,9 @@ Establish whether accessibility metadata regressions can be usefully detected be
 
 The bounded [pilot script](../scripts/pilot_release_pairs.py) uses **all 20 versioned GitHub release assets from 2026** identified on November 6, ordered by their publication time. It compares **19 adjacent release pairs** (one unofficial feed, *not* 19 independent agencies). The release tags and exact publication-date metadata are enumerated in the script, which also records downloaded ZIP SHA-256 hashes, counts, stop-ID overlaps, changed-status counts, and identity review flags.
 
-The script downloads each asset into a temporary directory (5 MiB download cap), checks root-level `stops.txt`, and publishes only aggregate JSON/Markdown outputs as CI artifacts. **No publisher ZIP is committed or uploaded as an artifact.**
+The script downloads each asset into a temporary directory (5 MiB download cap), checks root-level `stops.txt`, and publishes only aggregate JSON/Markdown outputs as CI artifacts. It marks invalid input as unusable instead of reporting a clean comparison; the workflow fails if no pairs are usable. **No publisher ZIP is committed or uploaded as an artifact.**
+
+**Automated outcome:** [the published 2026 results](PILOT_RESULTS_2026.md) include 18 comparable adjacent pairs out of 19, one malformed early release, and a notable set of **132 candidate metadata losses within one release pair**. That result needs human and independent validator review before calling it a feed problem. A versioned [aggregate JSON record](research/pilot-2026-aggregate.json) preserves the release hashes and bounded review samples.
 
 To reproduce in an environment that can download GitHub release assets:
 
@@ -36,7 +38,8 @@ Or run the [Licensed real-feed pilot workflow](../.github/workflows/pilot.yml) m
 
 | Release pair | Comparable ID coverage | Automated loss flags | Human-confirmed loss | False positive / uncertain | Reviewer time |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Pending validated pilot | — | — | Pending | Pending | — |
+| `13.05.2026_1.1.0` → `13.05.2026_1.2.0` | 100% | 132 | Not yet reviewed | Unknown | Not yet measured |
+| `01.02.2026` → `01.02.2026-1.0.1` | Unusable input | Not compared | Not reviewed | Not applicable | Not yet measured |
 
 ## Additional potential source (not automatically downloaded)
 
