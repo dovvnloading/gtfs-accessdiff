@@ -133,7 +133,7 @@ class AuditTests(unittest.TestCase):
         make_zip(self.after, [("A", "Stop | A", "0", "", "0")])
         report = compare_feeds(self.before, self.after)
         data = json.loads(report.to_json())
-        self.assertEqual(data["schema_version"], "0.3.0")
+        self.assertEqual(data["schema_version"], "0.4.0")
         self.assertEqual(data["information_losses"], 1)
         self.assertIn("Stop \\| A", report.to_markdown())
         self.assertEqual(report.to_json(), compare_feeds(self.before, self.after).to_json())

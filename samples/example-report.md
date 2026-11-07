@@ -23,6 +23,17 @@ This report compares published wheelchair-accessibility *data*. It does not esta
 | Added IDs | 1 |
 | Added IDs with known candidate status | 1 |
 
+## Effective accessibility-status transitions
+
+Counts are for comparable shared stop IDs only, after identity quarantine and parent inheritance.
+
+| Before | After | Records |
+| --- | --- | ---: |
+| `1` | `1` | 1 |
+| `1` | `unknown` | 2 |
+| `2` | `1` | 1 |
+| `unknown` | `1` | 1 |
+
 ## Accessibility metadata changes requiring review
 
 | Stop ID | Name | Finding | Before → After | Effective source (before → after) | Meaning |

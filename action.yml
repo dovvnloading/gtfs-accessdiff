@@ -30,6 +30,10 @@ inputs:
     description: Opt-in nonzero exit for detected losses (2) or incomplete identity matching (3).
     required: false
     default: 'false'
+  fail-on-status-change:
+    description: Independently opt in to block on known 1-to-2 or 2-to-1 status changes (4); identity gaps still exit 3.
+    required: false
+    default: 'false'
 outputs:
   json-report:
     description: Path to the machine-readable report.
@@ -69,23 +73,34 @@ runs:
       shell: bash
       env:
         FAIL_ON_LOSS: ${{ inputs.fail-on-loss }}
+        FAIL_ON_STATUS_CHANGE: ${{ inputs.fail-on-status-change }}
         JSON_REPORT: ${{ steps.report.outputs.json_report }}
       run: |
         set -euo pipefail
-        case "$FAIL_ON_LOSS" in
-          false) exit 0 ;;
-          true) ;;
-          *) echo 'fail-on-loss must be true or false' >&2; exit 1 ;;
-        esac
-        # Gate the exact report that is uploaded instead of recomputing a third
-        # time. This also avoids a feed changing between the report and gate.
-        python3 - "$JSON_REPORT" <<'PYCODE'
+        for value in "$FAIL_ON_LOSS" "$FAIL_ON_STATUS_CHANGE"; do
+          case "$value" in
+            false|true) ;;
+            *) echo 'Gate flags must be true or false' >&2; exit 1 ;;
+          esac
+        done
+        if [[ "$FAIL_ON_LOSS" == false && "$FAIL_ON_STATUS_CHANGE" == false ]]; then
+          exit 0
+        fi
+        # Gate the exact published report rather than recomputing a third time.
+        # The shared Python policy prevents CLI/Action exit-code drift.
+        PYTHONPATH="${{ github.action_path }}/src" python3 - "$JSON_REPORT" "$FAIL_ON_LOSS" "$FAIL_ON_STATUS_CHANGE" <<'PYCODE'
         import json
         import sys
         from pathlib import Path
+        from gtfs_accessdiff.gate import gate_exit_code
         report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-        if report["status"] in {"inconclusive_low_id_overlap", "identity_review_required"}:
-            sys.exit(3)
-        if report["information_losses"]:
-            sys.exit(2)
+        sys.exit(gate_exit_code(
+            comparable_overlap=report["comparable_overlap"],
+            min_overlap=report["min_overlap"],
+            identity_concerns=report["identity_concerns_total"],
+            information_losses=report["information_losses"],
+            status_changes=report["status_changes"],
+            fail_on_loss=sys.argv[2] == "true",
+            fail_on_status_change=sys.argv[3] == "true",
+        ))
         PYCODE

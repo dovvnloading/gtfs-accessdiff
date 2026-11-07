@@ -36,7 +36,10 @@ jobs:
           import json, os
           from pathlib import Path
           report = json.loads(Path(os.environ["JSON_REPORT"]).read_text(encoding="utf-8"))
-          assert report["schema_version"] == "0.3.0"
+          assert report["schema_version"] == "0.4.0"
+          assert report["status_transition_total"] == report["comparable_records"]
+          assert sum(row["records"] for row in report["status_transitions"]) == report["comparable_records"]
+          assert any(row["baseline_value"] == "1" and row["candidate_value"] == "unknown" for row in report["status_transitions"])
           assert report["information_losses"] == 2
           assert "# GTFS AccessDiff report" in Path(os.environ["MARKDOWN_REPORT"]).read_text(encoding="utf-8")
           PYTHON
@@ -53,3 +56,53 @@ jobs:
         env:
           GATE_OUTCOME: ${{ steps.action_gate.outcome }}
         run: test "$GATE_OUTCOME" = "failure"
+
+      - name: Generate a synthetic published known-status change (not information loss)
+        env:
+          FIXTURE_DIR: ${{ runner.temp }}/gtfs-status-test
+        run: |
+          python - <<'PYTHON'
+          import io, os, csv, zipfile
+          from pathlib import Path
+          root = Path(os.environ['FIXTURE_DIR'])
+          root.mkdir(parents=True, exist_ok=True)
+          for name, status in [('baseline', '1'), ('candidate', '2')]:
+              buffer = io.StringIO(newline='')
+              writer = csv.writer(buffer)
+              writer.writerow(['stop_id', 'stop_name', 'wheelchair_boarding'])
+              writer.writerow(['KNOWN_STATUS', 'Sample stop', status])
+              with zipfile.ZipFile(root / (name + '.zip'), 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+                  archive.writestr('stops.txt', buffer.getvalue())
+          PYTHON
+      - name: Exercise optional status-change CI failure
+        id: action_status_gate
+        continue-on-error: true
+        uses: ./
+        with:
+          baseline: ${{ runner.temp }}/gtfs-status-test/baseline.zip
+          candidate: ${{ runner.temp }}/gtfs-status-test/candidate.zip
+          report-directory: ${{ runner.temp }}/gtfs-status-test/reports-gated
+          fail-on-loss: 'false'
+          fail-on-status-change: 'true'
+      - name: Confirm status-change gate fails without counting information losses
+        env:
+          STATUS_GATE_OUTCOME: ${{ steps.action_status_gate.outcome }}
+        run: |
+          test "$STATUS_GATE_OUTCOME" = failure
+          python - <<'PYTHON'
+          import json
+          from pathlib import Path
+          import os
+          report = json.loads((Path(os.environ['RUNNER_TEMP']) / 'gtfs-status-test' / 'reports-gated' / 'audit.json').read_text())
+          assert report['status_changes'] == 1
+          assert report['information_losses'] == 0
+          assert report['status_transitions'] == [{'baseline_value':'1', 'candidate_value':'2', 'records':1}]
+          PYTHON
+      - name: Confirm report-only still works with known-status change
+        uses: ./
+        with:
+          baseline: ${{ runner.temp }}/gtfs-status-test/baseline.zip
+          candidate: ${{ runner.temp }}/gtfs-status-test/candidate.zip
+          report-directory: ${{ runner.temp }}/gtfs-status-test/reports-nonblocking
+          fail-on-loss: 'false'
+          fail-on-status-change: 'false'

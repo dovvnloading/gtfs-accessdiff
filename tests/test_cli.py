@@ -73,6 +73,27 @@ class CliTests(unittest.TestCase):
         self.assertEqual(self.call("--fail-on-loss", "--min-overlap", "0.5")[0], 3)
         self.assertEqual(self.call("--fail-on-loss", "--min-overlap", "0.5", "--identity-distance-meters", "200000")[0], 2)
 
+    def test_status_change_gate_is_separate_from_loss_gate(self):
+        make_zip(self.before, [("A", "Stop", "0", "", "1")])
+        make_zip(self.after, [("A", "Stop", "0", "", "2")])
+        self.assertEqual(self.call()[0], 0)
+        self.assertEqual(self.call("--fail-on-loss")[0], 0)
+        self.assertEqual(self.call("--fail-on-status-change")[0], 4)
+        self.assertEqual(self.call("--fail-on-loss", "--fail-on-status-change")[0], 4)
+
+    def test_identity_quarantine_prioritized_above_other_detected_losses(self):
+        from test_provenance import make_zip as make_geocoded_zip
+        before = [("A", "A", "0", "", "1", "40", "-75"),
+                  ("B", "B", "0", "", "1", "40", "-75")]
+        after = [("A", "A", "0", "", "0", "40", "-75"),
+                 ("B", "B", "0", "", "0", "42", "-75")]
+        make_geocoded_zip(self.before, before)
+        make_geocoded_zip(self.after, after)
+        code, output, _ = self.call("--fail-on-loss", "--min-overlap", "0.5")
+        self.assertEqual(code, 3)
+        self.assertIn("information_losses_found", output)
+        self.assertIn("Partial review required", output)
+
     def test_reject_nonfinite_cli_thresholds(self):
         import contextlib
         import io

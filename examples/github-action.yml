@@ -22,6 +22,7 @@ jobs:
           candidate: feeds/proposed.zip
           # Leave false while reviewing your feed's stop-ID stability.
           fail-on-loss: 'false'
+          fail-on-status-change: 'false' # Set true only after a baseline review
       - uses: actions/upload-artifact@v4
         if: always()
         with:
