@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .audit import DEFAULT_REPORT_LIMIT, FeedError, compare_feeds
+from .gate import gate_exit_code
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -34,6 +35,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--fail-on-loss", action="store_true",
         help="Exit 2 for information loss, or 3 if comparison is inconclusive or needs identity review",
+    )
+    parser.add_argument(
+        "--fail-on-status-change", action="store_true",
+        help="Exit 4 for a comparable known status 1↔2 change, or 3 if identity review is incomplete",
     )
     args = parser.parse_args(argv)
     if not math.isfinite(args.min_overlap) or not 0 <= args.min_overlap <= 1:
@@ -68,12 +73,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"gtfs-accessdiff: {e}", file=sys.stderr)
         return 1
 
-    if args.fail_on_loss:
-        if report.status in {"inconclusive_low_id_overlap", "identity_review_required"}:
-            return 3
-        if report.information_losses:
-            return 2
-    return 0
+    return gate_exit_code(
+        comparable_overlap=report.comparable_overlap,
+        min_overlap=report.min_overlap,
+        identity_concerns=len(report.identity_concerns),
+        information_losses=report.information_losses,
+        status_changes=report.status_changes,
+        fail_on_loss=args.fail_on_loss,
+        fail_on_status_change=args.fail_on_status_change,
+    )
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ import json
 import math
 import re
 import zipfile
+from collections import Counter
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import Any
@@ -22,7 +23,7 @@ KNOWN_VALUES = frozenset({"1", "2"})
 VALID_VALUES = frozenset({"", "0", "1", "2"})
 MAX_ID_SAMPLES = 25
 DEFAULT_REPORT_LIMIT = 200
-SCHEMA_VERSION = "0.3.0"
+SCHEMA_VERSION = "0.4.0"
 
 
 class FeedError(ValueError):
@@ -90,6 +91,13 @@ class InheritedCause:
 
 
 @dataclass(frozen=True)
+class StatusTransition:
+    baseline_value: str
+    candidate_value: str
+    records: int
+
+
+@dataclass(frozen=True)
 class AuditResult:
     status: str
     old_records: int
@@ -114,15 +122,18 @@ class AuditResult:
     added_id_samples: tuple[IdSample, ...] = ()
     inherited_causes: tuple[InheritedCause, ...] = ()
     identity_distance_meters: float = 500.0
+    status_transitions: tuple[StatusTransition, ...] = ()
 
     def as_dict(self, *, max_findings: int = DEFAULT_REPORT_LIMIT) -> dict[str, Any]:
         if max_findings < 1:
             raise ValueError("max_findings must be at least 1")
         body = {field.name: getattr(self, field.name) for field in fields(self) if field.name not in {
-            "findings", "identity_concerns", "removed_id_samples", "added_id_samples", "inherited_causes",
+            "findings", "identity_concerns", "removed_id_samples", "added_id_samples", "inherited_causes", "status_transitions",
         }}
         body.update({
             "schema_version": SCHEMA_VERSION,
+            "status_transitions": [asdict(item) for item in self.status_transitions],
+            "status_transition_total": sum(item.records for item in self.status_transitions),
             "findings": [asdict(f) for f in self.findings[:max_findings]],
             "findings_total": len(self.findings),
             "findings_omitted": max(0, len(self.findings) - max_findings),
@@ -174,7 +185,15 @@ class AuditResult:
         elif self.identity_concerns:
             lines.extend(["**Partial review required:** suspicious shared IDs were not compared for accessibility regressions.", ""])
 
-        lines.extend(["## Accessibility metadata changes requiring review", ""])
+        lines.extend(["## Effective accessibility-status transitions", "",
+                      "Counts are for comparable shared stop IDs only, after identity quarantine and parent inheritance.", ""])
+        if self.status_transitions:
+            lines.extend(["| Before | After | Records |", "| --- | --- | ---: |"])
+            for item in self.status_transitions:
+                lines.append(f"| `{item.baseline_value}` | `{item.candidate_value}` | {item.records} |")
+        else:
+            lines.append("No shared IDs were comparable; there is no status transition matrix.")
+        lines.extend(["", "## Accessibility metadata changes requiring review", ""])
         if self.findings:
             lines.extend([
                 "| Stop ID | Name | Finding | Before → After | Effective source (before → after) | Meaning |",
@@ -460,6 +479,7 @@ def compare_feeds(
     concerns: list[IdentityConcern] = []
     losses = changes = gains = 0
     inherited_losses: dict[str, list[str]] = {}
+    status_transitions: Counter[tuple[str, str]] = Counter()
 
     # Review identity changes before comparing ANY dependent inherited values.
     # A reused station ID can otherwise create misleading child-level losses.
@@ -484,6 +504,7 @@ def compare_feeds(
         if concern:
             concerns.append(concern)
             continue
+        status_transitions[(before.value, after.value)] += 1
         if before.value == after.value:
             continue
         if before.value in KNOWN_VALUES and after.value == "unknown":
@@ -541,4 +562,8 @@ def compare_feeds(
             sample_omitted=max(0, len(ids) - MAX_ID_SAMPLES),
         ) for source, ids in sorted(inherited_losses.items())),
         identity_distance_meters=identity_distance_meters,
+        status_transitions=tuple(StatusTransition(before, after, count)
+                                 for (before, after), count in sorted(status_transitions.items(),
+                                      key=lambda item: (("1", "2", "unknown").index(item[0][0]),
+                                                        ("1", "2", "unknown").index(item[0][1])))),
     )

@@ -89,8 +89,31 @@
   ],
   "removed_known_records": 1,
   "removed_record_ids": 1,
-  "schema_version": "0.3.0",
+  "schema_version": "0.4.0",
   "scope": "GTFS stops.txt wheelchair_boarding, including parent inheritance",
   "status": "information_losses_found",
-  "status_changes": 1
+  "status_changes": 1,
+  "status_transition_total": 5,
+  "status_transitions": [
+    {
+      "baseline_value": "1",
+      "candidate_value": "1",
+      "records": 1
+    },
+    {
+      "baseline_value": "1",
+      "candidate_value": "unknown",
+      "records": 2
+    },
+    {
+      "baseline_value": "2",
+      "candidate_value": "1",
+      "records": 1
+    },
+    {
+      "baseline_value": "unknown",
+      "candidate_value": "1",
+      "records": 1
+    }
+  ]
 }

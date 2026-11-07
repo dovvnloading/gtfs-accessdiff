@@ -8,7 +8,7 @@ Prioritize human-reviewable evidence over expanding scope. Every significant rul
 - [x] Parent inheritance, distinct status-change classification and ID-overlap threshold.
 - [x] Versioned JSON/Markdown, synthetic fixtures, 28 tests, GitHub Actions unit-test workflow.
 
-## Stage 1: Evidence and safety (feature PR for v0.3)
+## Stage 1: Evidence and safety (merged on main, v0.3)
 
 - [x] **[#2](https://github.com/dovvnloading/gtfs-accessdiff/issues/2):** ID churn samples; quarantine changed location types and large coordinate moves; never fuzzy join.
 - [x] **[#3](https://github.com/dovvnloading/gtfs-accessdiff/issues/3):** Explicit/inherited accessibility provenance and root-cause grouping.
@@ -16,7 +16,13 @@ Prioritize human-reviewable evidence over expanding scope. Every significant rul
 - [x] **[#5](https://github.com/dovvnloading/gtfs-accessdiff/issues/5):** Reusable, opt-in, offline composite GitHub Action with read-only calling workflow.
 - [ ] **[#1](https://github.com/dovvnloading/gtfs-accessdiff/issues/1):** Three release comparisons *and* human review, independent canonical validator, and publisher feedback. The 20-release sweep and independent raw/official-validator cross-check of the notable pair are complete; publisher review and broader independent-feed testing remain.
 
-## Stage 2: Only after a useful pilot
+## Stage 1.5: Make review reports actionable (v0.4)
+
+- [x] [#7](https://github.com/dovvnloading/gtfs-accessdiff/issues/7): Exact effective accessibility-status transition matrix, including unchanged values and information gains.
+- [x] Distinct, opt-in known-status-change CI gate; shared exit policy and explicit incomplete-review priority.
+- [x] Synthetic CLI/Action coverage for 1 ↔ 2 changes; report-only defaults to nonblocking.
+
+## Stage 2: After a useful pilot and maintainer feedback
 
 - [ ] Trip-level `wheelchair_accessible` comparisons with conservative trip identity checks.
 - [ ] Pathway graph reviews; never confuse static GTFS pathways with live elevator availability.

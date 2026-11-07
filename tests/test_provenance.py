@@ -48,6 +48,38 @@ class ProvenanceTests(unittest.TestCase):
         self.assertEqual(resolved_statuses(load_stops(self.old))["OVERRIDE"].source_kind, "explicit")
         self.assertEqual(report.to_json(), compare_feeds(self.old, self.new).to_json())
 
+    def test_transition_matrix_counts_all_comparable_values_and_excludes_quarantine(self):
+        old = [("A", "A", "0", "", "1", "40", "-75"),
+               ("B", "B", "0", "", "2", "40", "-75"),
+               ("C", "C", "0", "", "0", "40", "-75"),
+               ("D", "D", "0", "", "1", "40", "-75"),
+               ("E", "E", "0", "", "2", "40", "-75"),
+               ("F", "F", "0", "", "1", "40", "-75")]
+        new = [("A", "A", "0", "", "1", "40", "-75"),
+               ("B", "B", "0", "", "1", "40", "-75"),
+               ("C", "C", "0", "", "2", "40", "-75"),
+               ("D", "D", "0", "", "0", "40", "-75"),
+               ("E", "E", "0", "", "2", "40", "-75"),
+               ("F", "F", "0", "", "0", "41", "-75")]
+        make_zip(self.old, old)
+        make_zip(self.new, new)
+        report = compare_feeds(self.old, self.new, min_overlap=0.75)
+        matrix = {(x.baseline_value, x.candidate_value): x.records for x in report.status_transitions}
+        self.assertEqual(matrix, {("1", "1"): 1, ("1", "unknown"): 1,
+                                  ("2", "1"): 1, ("2", "2"): 1,
+                                  ("unknown", "2"): 1})
+        self.assertEqual(sum(matrix.values()), report.comparable_records)
+        self.assertEqual(report.comparable_records, 5)
+        self.assertEqual(report.information_losses, 1)
+        self.assertEqual(report.status_changes, 1)
+        self.assertEqual(report.information_gains, 1)
+        data = report.as_dict()
+        self.assertEqual(data["status_transition_total"], 5)
+        self.assertEqual(len(data["status_transitions"]), 5)
+        self.assertIn("## Effective accessibility-status transitions", report.to_markdown())
+        self.assertIn("| `1` | `unknown` | 1 |", report.to_markdown())
+        self.assertEqual(report.to_json(), compare_feeds(self.old, self.new, min_overlap=0.75).to_json())
+
     def test_location_type_change_is_quarantined_not_loss(self):
         make_zip(self.old, [("S", "Station", "1", "", "1", "40", "-75")])
         make_zip(self.new, [("S", "Stop", "0", "", "0", "40", "-75")])
