@@ -106,3 +106,45 @@ jobs:
           report-directory: ${{ runner.temp }}/gtfs-status-test/reports-nonblocking
           fail-on-loss: 'false'
           fail-on-status-change: 'false'
+
+      - name: Create disjoint GTFS stop IDs for zero-coverage safety check
+        env:
+          FIXTURE_DIR: ${{ runner.temp }}/gtfs-disjoint-test
+        run: |
+          python - <<'PYTHON'
+          import csv, io, os, zipfile
+          from pathlib import Path
+          root = Path(os.environ['FIXTURE_DIR'])
+          root.mkdir(parents=True, exist_ok=True)
+          for filename, stop_id in [('baseline', 'A'), ('candidate', 'B')]:
+              buffer = io.StringIO(newline='')
+              writer = csv.writer(buffer)
+              writer.writerow(['stop_id', 'stop_name', 'wheelchair_boarding'])
+              writer.writerow([stop_id, 'Unrelated stop', '1'])
+              with zipfile.ZipFile(root / (filename + '.zip'), 'w') as archive:
+                  archive.writestr('stops.txt', buffer.getvalue())
+          PYTHON
+      - name: Exercise zero-overlap fail-closed CI gate despite minimum zero
+        id: action_zero_coverage
+        continue-on-error: true
+        uses: ./
+        with:
+          baseline: ${{ runner.temp }}/gtfs-disjoint-test/baseline.zip
+          candidate: ${{ runner.temp }}/gtfs-disjoint-test/candidate.zip
+          report-directory: ${{ runner.temp }}/gtfs-disjoint-test/reports
+          min-overlap: '0'
+          fail-on-loss: 'true'
+      - name: Confirm zero-coverage gate fails and does not say clean
+        env:
+          ZERO_GATE_OUTCOME: ${{ steps.action_zero_coverage.outcome }}
+        run: |
+          test "$ZERO_GATE_OUTCOME" = failure
+          python - <<'PYTHON'
+          import json, os
+          from pathlib import Path
+          report_path = Path(os.environ['RUNNER_TEMP']) / 'gtfs-disjoint-test' / 'reports' / 'audit.json'
+          data = json.loads(report_path.read_text(encoding='utf-8'))
+          assert data['comparable_records'] == 0
+          assert data['status'] == 'inconclusive_low_id_overlap'
+          assert data['status_transition_total'] == 0
+          PYTHON

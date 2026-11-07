@@ -36,6 +36,16 @@ class CliTests(unittest.TestCase):
         make_zip(self.after, [("A", "A", "0", "", "0")])
         self.assertEqual(self.call()[0], 0)
 
+    def test_zero_overlap_with_zero_threshold_is_still_inconclusive(self):
+        make_zip(self.before, [("A", "A", "0", "", "1")])
+        make_zip(self.after, [("B", "B", "0", "", "1")])
+        exit_code, output, _ = self.call("--min-overlap", "0", "--fail-on-loss")
+        self.assertEqual(exit_code, 3)
+        self.assertIn("inconclusive_low_id_overlap", output)
+        self.assertIn("Inconclusive:", output)
+        self.assertEqual(self.call("--min-overlap", "0", "--fail-on-status-change")[0], 3)
+        self.assertEqual(self.call("--min-overlap", "0")[0], 0)  # report-only remains nonblocking
+
     def test_exit_three_on_inconclusive_comparison(self):
         make_zip(self.before, [("A", "A", "0", "", "1")])
         make_zip(self.after, [("B", "B", "0", "", "1")])

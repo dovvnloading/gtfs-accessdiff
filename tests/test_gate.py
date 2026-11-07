@@ -36,6 +36,14 @@ class GateTests(unittest.TestCase):
                                    identity_concerns=1, fail_on_loss=True,
                                    fail_on_status_change=True), 3)
 
+    def test_zero_overlap_is_inconclusive_even_when_user_sets_threshold_zero(self):
+        self.assertEqual(self.base(comparable_overlap=0.0, min_overlap=0.0,
+                                   fail_on_loss=True), 3)
+        self.assertEqual(self.base(comparable_overlap=0.0, min_overlap=0.0,
+                                   fail_on_status_change=True), 3)
+        self.assertEqual(self.base(comparable_overlap=0.1, min_overlap=0.0,
+                                   fail_on_loss=True), 0)
+
     def test_low_coverage_always_requires_review_when_any_gate_enabled(self):
         self.assertEqual(self.base(comparable_overlap=0.5, min_overlap=0.75,
                                    information_losses=2, fail_on_loss=True), 3)
