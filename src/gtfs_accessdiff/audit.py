@@ -343,8 +343,29 @@ def load_stops(path: str | Path) -> dict[str, Stop]:
         raise FeedError(f"Malformed stops.txt CSV: {e}") from e
 
 
+def _validate_parent_graph(stops: dict[str, Stop]) -> None:
+    """Reject cycles even when explicit values would stop inheritance traversal.
+
+    This is separate from value resolution: an explicit wheelchair value does
+    not make an invalid parent_station cycle valid.
+    """
+    checked: set[str] = set()
+    for stop_id in stops:
+        pending: set[str] = set()
+        cursor = stop_id
+        while cursor and cursor not in checked:
+            if cursor in pending:
+                raise FeedError(f"Cycle in parent_station hierarchy involving {cursor!r}")
+            if cursor not in stops:
+                raise FeedError(f"Unknown parent_station {cursor!r} in hierarchy")
+            pending.add(cursor)
+            cursor = stops[cursor].parent_station
+        checked.update(pending)
+
+
 def resolved_statuses(stops: dict[str, Stop]) -> dict[str, ResolvedStatus]:
-    """Find the explicit source of inherited values; detect cycles iteratively."""
+    """Find the explicit source of inherited values; reject cycles iteratively."""
+    _validate_parent_graph(stops)
     values: dict[str, ResolvedStatus] = {}
     for stop_id in stops:
         if stop_id in values:

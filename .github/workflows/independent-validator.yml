@@ -1,0 +1,35 @@
+name: Independent GTFS validator cross-check
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/pilot-provenance-and-ci]
+    paths:
+      - 'scripts/verify_pilot_pair.py'
+      - 'tests/test_independent_verification.py'
+      - '.github/workflows/independent-validator.yml'
+permissions:
+  contents: read
+jobs:
+  independent-gtfs-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Independently validate both SHA-256-pinned CC BY 4.0 releases
+        env:
+          GTFS_INDEPENDENT_REPORT_DIR: independent-validation-results
+        run: python scripts/verify_pilot_pair.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: independent-validation-summary
+          path: independent-validation-results/
+          if-no-files-found: warn
+          retention-days: 30

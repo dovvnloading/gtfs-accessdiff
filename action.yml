@@ -68,11 +68,8 @@ runs:
     - name: Apply optional CI gate
       shell: bash
       env:
-        BASELINE: ${{ inputs.baseline }}
-        CANDIDATE: ${{ inputs.candidate }}
-        MIN_OVERLAP: ${{ inputs.min-overlap }}
-        IDENTITY_METERS: ${{ inputs.identity-distance-meters }}
         FAIL_ON_LOSS: ${{ inputs.fail-on-loss }}
+        JSON_REPORT: ${{ steps.report.outputs.json_report }}
       run: |
         set -euo pipefail
         case "$FAIL_ON_LOSS" in
@@ -80,6 +77,15 @@ runs:
           true) ;;
           *) echo 'fail-on-loss must be true or false' >&2; exit 1 ;;
         esac
-        BASELINE="$(realpath -e -- "$BASELINE")"
-        CANDIDATE="$(realpath -e -- "$CANDIDATE")"
-        PYTHONPATH="${{ github.action_path }}/src" python3 -m gtfs_accessdiff "$BASELINE" "$CANDIDATE" --min-overlap "$MIN_OVERLAP" --identity-distance-meters "$IDENTITY_METERS" --format json --fail-on-loss >/dev/null
+        # Gate the exact report that is uploaded instead of recomputing a third
+        # time. This also avoids a feed changing between the report and gate.
+        python3 - "$JSON_REPORT" <<'PYCODE'
+        import json
+        import sys
+        from pathlib import Path
+        report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+        if report["status"] in {"inconclusive_low_id_overlap", "identity_review_required"}:
+            sys.exit(3)
+        if report["information_losses"]:
+            sys.exit(2)
+        PYCODE

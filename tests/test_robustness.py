@@ -55,6 +55,16 @@ class RobustnessTests(unittest.TestCase):
         self.assertEqual(result.information_losses, 1)
         self.assertFalse(result.identity_concerns)
 
+    def test_cycle_is_rejected_even_when_both_nodes_have_explicit_values(self):
+        # Older resolution stopped following a parent when it encountered an
+        # explicit status, allowing an invalid cycle to pass undetected.
+        csv_text = ("stop_id,stop_name,location_type,parent_station,wheelchair_boarding\n"
+                    "A,A,0,B,1\nB,B,0,A,2\n")
+        self.csv_zip(self.before, csv_text)
+        self.csv_zip(self.after, csv_text)
+        with self.assertRaisesRegex(FeedError, "Cycle in parent_station"):
+            compare_feeds(self.before, self.after)
+
     def test_invalid_location_type_fails_closed(self):
         self.csv_zip(self.before, 'stop_id,location_type,wheelchair_boarding\nA,999,1\n')
         with self.assertRaisesRegex(FeedError, 'Invalid location_type'):
