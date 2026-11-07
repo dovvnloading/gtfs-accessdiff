@@ -62,6 +62,10 @@ class PilotTests(unittest.TestCase):
             "information_losses_found", "input_unusable", "input_unusable", "information_losses_found",
         ])
         self.assertEqual([p["known_information_losses"] for p in report["pairs"] if p["status"] != "input_unusable"], [1, 1])
+        self.assertEqual(report["pairs"][0]["baseline_known_records"], 1)
+        self.assertEqual(report["pairs"][0]["candidate_known_records"], 0)
+        self.assertEqual(report["pairs"][0]["loss_sample"][0]["stop_id"], "A")
+        self.assertEqual(report["pairs"][0]["loss_sample"][0]["baseline_raw_value"], "1")
         self.assertEqual(report["pairs"][1]["unusable_tags"], ["C"])
         self.assertEqual(report["pairs"][2]["unusable_tags"], ["C"])
         invalid = next(release for release in report["releases"] if release["tag"] == "C")
@@ -72,6 +76,20 @@ class PilotTests(unittest.TestCase):
         self.assertIn("input unusable", markdown)
         self.assertIn("Jarosław", markdown)
         self.assertEqual(summary_path.read_text(encoding="utf-8"), markdown)
+
+    def test_no_usable_pilot_pairs_is_not_reported_as_success(self) -> None:
+        releases = (("BAD_A", "2026-01-01"), ("BAD_B", "2026-01-02"))
+
+        def fake_download(tag: str, target: Path) -> dict[str, str | int]:
+            write_feed(target, "1", location_type="unparseable")
+            return {"url": f"https://example.invalid/{tag}.zip", "sha256": "test", "bytes": target.stat().st_size}
+
+        with patch.object(pilot, "RELEASES", releases), patch.object(pilot, "_download", side_effect=fake_download), patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(self.root / "summary.md")}):
+            with self.assertRaisesRegex(RuntimeError, "No usable GTFS release pairs"):
+                pilot.run(self.root / "out")
+        report = json.loads((self.root / "out" / "pilot-summary.json").read_text())
+        self.assertEqual(report["unusable_pair_count"], 1)
+        self.assertEqual(report["usable_pair_count"], 0)
 
     def test_clean_pilot_does_not_invent_regressions(self) -> None:
         releases = (("A", "2026-01-01"), ("B", "2026-01-02"))

@@ -114,7 +114,16 @@ def run(output_directory: Path) -> dict:
                 "comparable_ids": audit.comparable_records,
                 "comparable_overlap": round(audit.comparable_overlap, 6),
                 "identity_concerns": len(audit.identity_concerns),
+                "baseline_known_records": audit.old_known_records,
+                "candidate_known_records": audit.new_known_records,
                 "known_information_losses": audit.information_losses,
+                "loss_sample": [
+                    {"stop_id": f.stop_id, "old_value": f.old_value, "new_value": f.new_value,
+                     "baseline_raw_value": f.baseline_raw_value,
+                     "candidate_raw_value": f.candidate_raw_value,
+                     "baseline_source_id": f.baseline_source_id}
+                    for f in audit.findings if f.category == "information_loss"
+                ][:5],
                 "known_status_changes": audit.status_changes,
                 "information_gains": audit.information_gains,
                 "removed_ids": audit.removed_record_ids,
@@ -142,15 +151,16 @@ def run(output_directory: Path) -> dict:
         f"**Attribution:** {ATTRIBUTION}. [License]({LICENSE}). [Source]({SOURCE}).", "",
         "The original feed ZIPs are downloaded into a temporary directory and not republished. This is an **unofficial**, independently compiled transit-data feed, not an official agency export.",
         "This pilot does **not** show whether actual accessibility changed; it has **not** received publisher review.", "",
-        "| Baseline → candidate | Comparable ID overlap | Published metadata losses | Status changes | ID review flags | Removed / added IDs |",
-        "| --- | ---: | ---: | ---: | ---: | ---: |",
+        "| Baseline → candidate | Comparable overlap | Known status before / after | Potential metadata losses | Status changes | Identity review flags | Removed / added IDs |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for pair in pairs:
         if pair["status"] == "input_unusable":
-            lines.append(f"| {pair['baseline']} → {pair['candidate']} | input unusable | — | — | — | — |")
+            lines.append(f"| {pair['baseline']} → {pair['candidate']} | input unusable | — | — | — | — | — |")
             continue
         lines.append(
             f"| {pair['baseline']} → {pair['candidate']} | {pair['comparable_overlap']:.1%} | "
+            f"{pair['baseline_known_records']} / {pair['candidate_known_records']} | "
             f"{pair['known_information_losses']} | {pair['known_status_changes']} | "
             f"{pair['identity_concerns']} | {pair['removed_ids']} / {pair['added_ids']} |"
         )
@@ -170,6 +180,8 @@ def run(output_directory: Path) -> dict:
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
             f.write(summary)
+    if report["usable_pair_count"] == 0:
+        raise RuntimeError("No usable GTFS release pairs; see generated summary for input errors")
     return report
 
 
