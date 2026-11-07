@@ -14,7 +14,7 @@ import urllib.request
 from datetime import date
 from pathlib import Path
 
-from gtfs_accessdiff.audit import compare_feeds, load_stops
+from gtfs_accessdiff.audit import FeedError, compare_feeds, load_stops, resolved_statuses
 
 SOURCE = "https://github.com/rozkladnik/gtfs-pwik-jaroslaw"
 LICENSE = "https://creativecommons.org/licenses/by/4.0/"
@@ -66,7 +66,6 @@ def _download(tag: str, output: Path) -> dict[str, str | int]:
                 raise ValueError(f"{tag}: download exceeds 5 MiB safety cap")
             digest.update(data)
             dest.write(data)
-    load_stops(output)  # reject unsupported or corrupt stops.txt before any comparison
     return {"url": url, "sha256": digest.hexdigest(), "bytes": size}
 
 
@@ -74,19 +73,40 @@ def run(output_directory: Path) -> dict:
     output_directory.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="gtfs-accessdiff-pilot-") as scratch:
         root = Path(scratch)
-        downloaded = {}
-        release_metadata = []
+        downloaded: dict[str, Path] = {}
+        release_metadata: list[dict] = []
+        validation_errors: dict[str, str] = {}
         for tag, published in RELEASES:
             target = root / f"{len(release_metadata)}.zip"
             meta = _download(tag, target)
             downloaded[tag] = target
+            try:
+                # Reject release-specific parse defects before attempting any pairs.
+                resolved_statuses(load_stops(target))
+                meta["input_check"] = "accepted"
+            except FeedError as error:
+                meta["input_check"] = "unusable"
+                meta["input_error"] = str(error)
+                validation_errors[tag] = str(error)
             release_metadata.append({"tag": tag, "published_at_utc": published, **meta})
 
-        pairs = []
+        pairs: list[dict] = []
         for (baseline, _), (candidate, _) in zip(RELEASES, RELEASES[1:]):
-            audit = compare_feeds(downloaded[baseline], downloaded[candidate])
-            pairs.append({
-                "baseline": baseline, "candidate": candidate,
+            result = {"baseline": baseline, "candidate": candidate}
+            if baseline in validation_errors or candidate in validation_errors:
+                pairs.append({**result,
+                    "status": "input_unusable",
+                    "unusable_tags": [tag for tag in (baseline, candidate) if tag in validation_errors],
+                    "note": "No accessibility comparison attempted; input failed parsing. Consult original release and independent validator.",
+                })
+                continue
+            try:
+                audit = compare_feeds(downloaded[baseline], downloaded[candidate])
+            except FeedError as error:
+                pairs.append({**result, "status": "input_unusable", "unusable_tags": [baseline, candidate],
+                              "note": f"Comparison validation failed: {error}"})
+                continue
+            pairs.append({**result,
                 "status": audit.status,
                 "baseline_records": audit.old_records,
                 "candidate_records": audit.new_records,
@@ -101,9 +121,12 @@ def run(output_directory: Path) -> dict:
                 "added_ids": audit.added_record_ids,
             })
 
+
     report = {
         "release_count": len(release_metadata),
         "pair_count": len(pairs),
+        "usable_pair_count": sum(p["status"] != "input_unusable" for p in pairs),
+        "unusable_pair_count": sum(p["status"] == "input_unusable" for p in pairs),
         "source": SOURCE,
         "license": LICENSE,
         "attribution": ATTRIBUTION,
@@ -123,14 +146,23 @@ def run(output_directory: Path) -> dict:
         "| --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for pair in pairs:
+        if pair["status"] == "input_unusable":
+            lines.append(f"| {pair['baseline']} → {pair['candidate']} | input unusable | — | — | — | — |")
+            continue
         lines.append(
             f"| {pair['baseline']} → {pair['candidate']} | {pair['comparable_overlap']:.1%} | "
             f"{pair['known_information_losses']} | {pair['known_status_changes']} | "
             f"{pair['identity_concerns']} | {pair['removed_ids']} / {pair['added_ids']} |"
         )
-    lines.extend(["", "## Release provenance", "", "| Tag | Publication (UTC) | SHA-256 | Bytes |", "| --- | --- | --- | ---: |"])
+    lines.extend(["", "## Release provenance", "", "| Tag | Publication (UTC) | SHA-256 | Bytes | Parse result |", "| --- | --- | --- | ---: | --- |"])
     for release in release_metadata:
-        lines.append(f"| [{release['tag']}]({release['url']}) | {release['published_at_utc']} | `{release['sha256']}` | {release['bytes']} |")
+        lines.append(f"| [{release['tag']}]({release['url']}) | {release['published_at_utc']} | `{release['sha256']}` | {release['bytes']} | {release['input_check']} |")
+    if validation_errors:
+        lines.extend(["", "## Unusable release notes (require independent validation)", ""])
+        for tag, error in sorted(validation_errors.items()):
+            # Untrusted error text is rendered as plain code-ish text, not source HTML.
+            safe_error = error.replace("|", "\\|").replace("`", "\\`").replace("\r", " ").replace("\n", " ")
+            lines.append(f"- **{tag}:** {safe_error}")
     lines.extend(["", "**Remaining:** human-review each finding, run the independent official validator, and ask the publisher for feedback. Until then do not claim any regression reflects a real-world hazard.", ""])
     summary = "\n".join(lines)
     (output_directory / "pilot-summary.md").write_text(summary, encoding="utf-8")

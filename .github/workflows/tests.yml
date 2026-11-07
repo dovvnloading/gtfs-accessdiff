@@ -19,3 +19,37 @@ jobs:
         run: PYTHONPATH=src python -m unittest discover -s tests -v
       - name: Run sample comparison
         run: PYTHONPATH=src python -m gtfs_accessdiff samples/baseline.zip samples/candidate.zip --format json --output /tmp/audit.json
+      - name: Smoke-test published composite action on synthetic GTFS
+        id: action_smoke
+        uses: ./
+        with:
+          baseline: samples/baseline.zip
+          candidate: samples/candidate.zip
+          report-directory: ${{ runner.temp }}/gtfs-accessdiff-action
+          fail-on-loss: 'false'
+      - name: Check composite action JSON and Markdown
+        env:
+          JSON_REPORT: ${{ steps.action_smoke.outputs.json-report }}
+          MARKDOWN_REPORT: ${{ steps.action_smoke.outputs.markdown-report }}
+        run: |
+          python - <<'PYTHON'
+          import json, os
+          from pathlib import Path
+          report = json.loads(Path(os.environ["JSON_REPORT"]).read_text(encoding="utf-8"))
+          assert report["schema_version"] == "0.3.0"
+          assert report["information_losses"] == 2
+          assert "# GTFS AccessDiff report" in Path(os.environ["MARKDOWN_REPORT"]).read_text(encoding="utf-8")
+          PYTHON
+      - name: Exercise opt-in CI failure on synthetic loss
+        id: action_gate
+        uses: ./
+        continue-on-error: true
+        with:
+          baseline: samples/baseline.zip
+          candidate: samples/candidate.zip
+          report-directory: ${{ runner.temp }}/gtfs-accessdiff-gate
+          fail-on-loss: 'true'
+      - name: Confirm the optional gate did fail
+        env:
+          GATE_OUTCOME: ${{ steps.action_gate.outcome }}
+        run: test "$GATE_OUTCOME" = "failure"
