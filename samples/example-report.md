@@ -8,30 +8,61 @@ This report compares published wheelchair-accessibility *data*. It does not esta
 | --- | ---: |
 | Location records in baseline | 6 |
 | Location records in candidate | 6 |
-| IDs matched across releases | 5 |
-| Overlap (matched / larger feed) | 83.3% |
+| Shared IDs | 5 |
+| IDs quarantined for identity review | 0 |
+| Comparable records | 5 |
+| ID overlap (shared / larger feed) | 83.3% |
+| Comparable coverage (after identity checks) | 83.3% |
 | Records with known status, baseline | 5 |
 | Records with known status, candidate | 4 |
 | **Known information lost** | **2** |
 | Known status changed | 1 |
 | Previously unknown became known | 1 |
-| Removed IDs (not classified as losses) | 1 |
+| Removed IDs (not counted as loss) | 1 |
+| Removed IDs with known baseline status | 1 |
 | Added IDs | 1 |
+| Added IDs with known candidate status | 1 |
 
-## Changes requiring review
+## Accessibility metadata changes requiring review
 
-| Stop ID | Name | Finding | Before → After | Meaning |
-| --- | --- | --- | --- | --- |
-| `B` | Oak Street | status_change | `2` → `1` | Published wheelchair status changed; confirm why before releasing. |
-| `PLAT` | Central Station Platform | information_loss | `1` → `unknown` | Previously published wheelchair status became unknown. |
-| `STA` | Central Station | information_loss | `1` → `unknown` | Previously published wheelchair status became unknown. |
+| Stop ID | Name | Finding | Before → After | Effective source (before → after) | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| B | Oak Street | status\_change | 2 → 1 | B → B | Published wheelchair status changed; confirm why before releasing. |
+| PLAT | Central Station Platform | information\_loss | 1 → unknown | STA → unknown | Previously published wheelchair status became unknown. |
+| STA | Central Station | information\_loss | 1 → unknown | STA → unknown | Previously published wheelchair status became unknown. |
+
+## Shared IDs requiring identity review
+
+No shared IDs exceeded the conservative identity review checks.
+
+## Shared source of inherited information losses
+
+| Baseline source stop ID | Affected loss records | Example affected IDs |
+| --- | ---: | --- |
+| STA | 1 | PLAT |
+
+## Added and removed ID samples (not automatically paired)
+
+### Removed IDs
+
+| Stop ID | Name | Effective wheelchair metadata |
+| --- | --- | --- |
+| D | Removed stop | 1 |
+
+### Added IDs
+
+| Stop ID | Name | Effective wheelchair metadata |
+| --- | --- | --- |
+| E | New stop | 1 |
 
 ## Interpretation and limitations
 
-- `1` means wheelchair boarding/access is indicated; `2` means wheelchair boarding/access is indicated as unavailable; `unknown` means no published status is known.
-- A `loss` means a known published value changed to unknown; it does **not** prove a physical accessibility change.
-- A `status_change` requires human review. It may reflect a correction or a real service change.
-- Locations are matched by stable `stop_id`; new/removed IDs are counted, not called regressions. ID churn can make comparisons inconclusive.
-- GTFS parent-station inheritance is resolved before comparing each location.
-- Version 0.1 examines only `stops.txt`'s `wheelchair_boarding`, not trip access, pathways, live elevator status, or text-to-speech.
-- Run the official MobilityData GTFS validator separately; this tool is not a standards-compliance validator.
+- `1` indicates some wheelchair access; `2` indicates wheelchair boarding/access is unavailable; `unknown` means no published status is known.
+- `information_loss` means known published metadata became unknown; it **does not** demonstrate a physical accessibility change.
+- `status_change` requires human review; it may be a correction or a real operational change.
+- Explicit/inherited status sources show where an effective accessibility value originated in `stops.txt`.
+- Location-type changes and movements beyond the configured distance are quarantined; matching IDs do **not** guarantee matching physical locations.
+- Added/removed stop IDs are shown for review, never automatically paired by name or proximity.
+- Shared ID comparisons cannot detect cases where both coordinates and names change without exceeding a check threshold.
+- Only `stops.txt` is examined; trip access, pathways, live elevator status and text-to-speech are outside this version's scope.
+- This is not a GTFS compliance validator; also run the official MobilityData GTFS validator.

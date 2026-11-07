@@ -1,31 +1,30 @@
-# Example for an adopting agency, with two reviewed GTFS snapshots committed
-# to its repository (or downloaded by a separate, controlled step).
-# Do not enable gating until you've checked ID stability and trial reports.
-name: Accessibility metadata regression check
+# Copy this to .github/workflows/accessibility-review.yml in a feed publisher's repo.
+# Only compares two explicitly provided files checked out locally in this job.
+# Pin the reusable action to a reviewed full commit SHA before production use.
+name: Accessibility data review
 on:
-  pull_request:
-    paths:
-      - 'feeds/**'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  compare:
+  accessibility-review:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      # After publishing the project on GitHub, pin the installation to a commit SHA.
-      - name: Install
-        run: python -m pip install .
-      - name: Compare reviewed baseline with candidate feed
-        run: |
-          gtfs-accessdiff feeds/approved.zip feeds/candidate.zip \
-            --format markdown --output accessdiff-report.md --fail-on-loss
-      - name: Upload report
-        if: always()
-        uses: actions/upload-artifact@v4
+          python-version: '3.11'
+      - name: Compare two checked-in or independently provisioned GTFS archives
+        id: accessdiff
+        uses: dovvnloading/gtfs-accessdiff@main # Replace with a reviewed commit SHA
         with:
-          name: accessibility-regression-report
-          path: accessdiff-report.md
+          baseline: feeds/approved.zip
+          candidate: feeds/proposed.zip
+          # Leave false while reviewing your feed's stop-ID stability.
+          fail-on-loss: 'false'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accessibility-review
+          path: gtfs-accessdiff-reports/
+          if-no-files-found: warn

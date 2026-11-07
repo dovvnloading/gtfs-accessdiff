@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gtfs-accessdiff"
-version = "0.2.0"
-description = "Compare wheelchair accessibility metadata across GTFS feed releases"
+version = "0.3.0"
+description = "Conservative GTFS wheelchair metadata regression review with identity checks and source provenance"
 requires-python = ">=3.11"
 readme = "README.md"
 license = "MIT"

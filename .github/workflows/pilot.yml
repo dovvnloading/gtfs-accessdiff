@@ -1,0 +1,33 @@
+name: Licensed real-feed pilot
+on:
+  workflow_dispatch:
+  # Preview pilot on our development branch; not an always-on upstream feed poll.
+  push:
+    branches: [feat/pilot-provenance-and-ci]
+    paths:
+      - 'scripts/pilot_release_pairs.py'
+      - 'src/**'
+      - '.github/workflows/pilot.yml'
+permissions:
+  contents: read
+jobs:
+  archived-feed-comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Audit three adjacent publication pairs from one CC BY 4.0 feed
+        env:
+          PYTHONPATH: src
+          GTFS_PILOT_REPORT_DIR: pilot-results
+        run: python scripts/pilot_release_pairs.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aggregate-pilot-results
+          path: pilot-results/
+          if-no-files-found: warn
+          retention-days: 30
