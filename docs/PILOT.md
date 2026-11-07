@@ -1,6 +1,6 @@
 # Licensed real-feed pilot: reproducible protocol
 
-**Status: automated pilot runnable on GitHub Actions; manual verification and upstream feedback outstanding.** An automated difference is evidence about *published data*, not physical accessibility or a user impact.
+**Status: automated pilot runnable on GitHub Actions; manual verification and publisher feedback outstanding.** An automated difference is evidence about *published data*, not physical accessibility or a user impact.
 
 ## Goal
 
@@ -8,16 +8,11 @@ Establish whether accessibility metadata regressions can be usefully detected be
 
 ## First test source: explicit CC BY 4.0 license
 
-**Attribution:** [Jarosławska Komunikacja Miejska GTFS](https://github.com/rozkladnik/gtfs-pwik-jaroslaw), published by `rozkladnik`; [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). The feed repository explicitly states its license and that its stops have wheelchair-accessibility information. It also warns some stop coordinates are approximate. That is why coordinate changes are *review signals*, never proof of different stop identity.
+**Attribution:** [Jarosławska Komunikacja Miejska GTFS](https://github.com/rozkladnik/gtfs-pwik-jaroslaw), independently compiled and published by `rozkladnik` (**unofficial; not affiliated with the transit operator**); [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). The feed repository explicitly states its license and that its stops have wheelchair-accessibility information. It also warns some stop coordinates are approximate. That is why coordinate changes are *review signals*, never proof of different stop identity.
 
-The bounded [pilot script](../scripts/pilot_release_pairs.py) uses only these four explicitly enumerated GitHub release assets, ordered by publication date:
+The bounded [pilot script](../scripts/pilot_release_pairs.py) uses **all 20 versioned GitHub release assets from 2026** identified on November 6, ordered by their publication time. It compares **19 adjacent release pairs** (one unofficial feed, *not* 19 independent agencies). The release tags and exact publication-date metadata are enumerated in the script, which also records downloaded ZIP SHA-256 hashes, counts, stop-ID overlaps, changed-status counts, and identity review flags.
 
-- `115` — June 26, 2026
-- `13.05.2026_1.6.0` — August 3, 2026
-- `v119_09_01_2026` — September 6, 2026
-- `v120_11_01_2026` — October 22, 2026
-
-The workflow compares **three adjacent publication pairs**. Actual publication order—not lexicographical tags or presumptive service-date order—is the only basis for pairing. It records release URLs, downloaded SHA-256 hashes, source sizes, exact counts, ID review flags and overlap. The script downloads feeds into a temporary directory (5 MiB download cap per asset), checks `stops.txt`, and publishes only an aggregate JSON/Markdown report. No provider ZIP is committed or uploaded as a CI artifact.
+The script downloads each asset into a temporary directory (5 MiB download cap), checks root-level `stops.txt`, and publishes only aggregate JSON/Markdown outputs as CI artifacts. **No publisher ZIP is committed or uploaded as an artifact.**
 
 To reproduce in an environment that can download GitHub release assets:
 

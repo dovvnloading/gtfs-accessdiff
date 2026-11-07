@@ -20,8 +20,25 @@ SOURCE = "https://github.com/rozkladnik/gtfs-pwik-jaroslaw"
 LICENSE = "https://creativecommons.org/licenses/by/4.0/"
 ATTRIBUTION = "Jarosławska Komunikacja Miejska GTFS, published by rozkladnik (CC BY 4.0)"
 RELEASES = (
+    # In increasing GitHub release publication time (not tag lexical order).
+    ("01.02.2026", "2026-01-01"),
+    ("01.02.2026-1.0.1", "2026-01-01"),
+    ("01.02.2026-1.0.2", "2026-01-17"),
+    ("1.02.2026-1.0.3", "2026-02-13"),
+    ("1.02.2026-1.0.4", "2026-02-20"),
+    ("1.02.2026-1.0.5", "2026-02-20"),
+    ("1.02.2026-1.0.6", "2026-02-26"),
+    ("03.01.2026-1.0.7", "2026-02-27"),
+    ("03.01.2026-1.0.8", "2026-03-04"),
+    ("04.01.2026-1.0.9A", "2026-03-30"),
+    ("20.04.2026_1.1.0", "2026-04-18"),
+    ("13.05.2026_1.1.0", "2026-05-14"),
+    ("13.05.2026_1.2.0", "2026-06-04"),
+    ("13.05.2026_1.4.0", "2026-06-11"),
     ("115", "2026-06-26"),
     ("13.05.2026_1.6.0", "2026-08-03"),
+    ("01.09.2026_1.7.0", "2026-08-30"),
+    ("v118_09_01_2026", "2026-09-03"),
     ("v119_09_01_2026", "2026-09-06"),
     ("v120_11_01_2026", "2026-10-22"),
 )
@@ -85,6 +102,8 @@ def run(output_directory: Path) -> dict:
             })
 
     report = {
+        "release_count": len(release_metadata),
+        "pair_count": len(pairs),
         "source": SOURCE,
         "license": LICENSE,
         "attribution": ATTRIBUTION,
@@ -98,7 +117,7 @@ def run(output_directory: Path) -> dict:
     lines = [
         "# Real-GTFS comparison pilot (automated observations)", "",
         f"**Attribution:** {ATTRIBUTION}. [License]({LICENSE}). [Source]({SOURCE}).", "",
-        "The original feed ZIPs are downloaded into a temporary directory and not republished.",
+        "The original feed ZIPs are downloaded into a temporary directory and not republished. This is an **unofficial**, independently compiled transit-data feed, not an official agency export.",
         "This pilot does **not** show whether actual accessibility changed; it has **not** received publisher review.", "",
         "| Baseline → candidate | Comparable ID overlap | Published metadata losses | Status changes | ID review flags | Removed / added IDs |",
         "| --- | ---: | ---: | ---: | ---: | ---: |",

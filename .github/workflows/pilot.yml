@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Audit three adjacent publication pairs from one CC BY 4.0 feed
+      - name: Audit 19 adjacent publication pairs from one CC BY 4.0 feed
         env:
           PYTHONPATH: src
           GTFS_PILOT_REPORT_DIR: pilot-results
