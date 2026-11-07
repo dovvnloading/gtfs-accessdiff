@@ -76,6 +76,14 @@ class IndependentVerificationTests(unittest.TestCase):
         self.assertEqual(result["system_errors_schema"], "dict")
         self.assertEqual(result["system_errors_keys"], ["some_new_field"])
 
+    def test_official_system_errors_notice_schema_is_counted(self):
+        report, system = self.root / "report.json", self.root / "system_errors.json"
+        report.write_text('{"notices": []}')
+        system.write_text('{"notices": [{"totalNotices": 2}, {"totalNotices": 3}]}')
+        actual = summarize_validator_report(report, system)
+        self.assertEqual(actual["system_errors_count"], 5)
+        self.assertEqual(actual["system_errors_keys"], ["notices"])
+
     def test_corrupt_notice_shape_is_not_accepted(self):
         report = self.root / "report.json"
         report.write_text('{"notices": [{"code": "abc", "severity": "ERROR", "totalNotices": "2"}]}')

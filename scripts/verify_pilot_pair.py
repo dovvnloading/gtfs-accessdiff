@@ -141,9 +141,11 @@ def summarize_validator_report(report_path: Path, system_path: Path) -> dict:
             errors = len(system)
         elif isinstance(system, dict):
             system_keys = sorted(system.keys())[:20]
-            for key in ("systemErrors", "errors"):
+            for key in ("systemErrors", "errors", "notices"):
                 if isinstance(system.get(key), list):
-                    errors = len(system[key])
+                    records = system[key]
+                    errors = sum(item.get("totalNotices", 1) if isinstance(item, dict) and
+                                 type(item.get("totalNotices", 1)) is int else 1 for item in records)
                     break
     return {
         "validator_version": report.get("summary", {}).get("validatorVersion") if isinstance(report.get("summary"), dict) else None,
