@@ -1,0 +1,44 @@
+{
+  "added_record_ids": 1,
+  "disclaimer": "Changes to published metadata do not prove physical accessibility changes.",
+  "findings": [
+    {
+      "category": "status_change",
+      "explanation": "Published wheelchair status changed; confirm why before releasing.",
+      "new_value": "1",
+      "old_value": "2",
+      "stop_id": "B",
+      "stop_name": "Oak Street"
+    },
+    {
+      "category": "information_loss",
+      "explanation": "Previously published wheelchair status became unknown.",
+      "new_value": "unknown",
+      "old_value": "1",
+      "stop_id": "PLAT",
+      "stop_name": "Central Station Platform"
+    },
+    {
+      "category": "information_loss",
+      "explanation": "Previously published wheelchair status became unknown.",
+      "new_value": "unknown",
+      "old_value": "1",
+      "stop_id": "STA",
+      "stop_name": "Central Station"
+    }
+  ],
+  "information_gains": 1,
+  "information_losses": 2,
+  "matched_records": 5,
+  "min_overlap": 0.75,
+  "new_known_records": 4,
+  "new_records": 6,
+  "old_known_records": 5,
+  "old_records": 6,
+  "overlap": 0.8333333333333334,
+  "removed_record_ids": 1,
+  "schema_version": "0.2.0",
+  "scope": "GTFS stops.txt wheelchair_boarding, including parent inheritance",
+  "status": "information_losses_found",
+  "status_changes": 1
+}
